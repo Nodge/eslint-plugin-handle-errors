@@ -46,9 +46,7 @@
         "test": "vitest",
         "typecheck": "tsc --noEmit"
     },
-    "dependencies": {
-        "@babel/types": "^7.24.0"
-    },
+    "dependencies": {},
     "devDependencies": {
         "@eslint/js": "^9.0.0",
         "@types/eslint": "^8.56.9",

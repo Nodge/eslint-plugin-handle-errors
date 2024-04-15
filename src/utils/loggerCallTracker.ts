@@ -1,6 +1,5 @@
 import { Rule } from 'eslint';
 import { BlockStatement, ReturnStatement, ThrowStatement } from 'estree';
-import t from '@babel/types';
 import { Settings } from './settings';
 
 interface ScopeStackEntry {
@@ -56,12 +55,9 @@ export function createLoggerCallTracker(settings: Settings, report: (node: Rule.
             }
 
             if (
-                // @ts-expect-error TODO: replace with custom guard
-                t.isArrowFunctionExpression(parent) ||
-                // @ts-expect-error TODO: replace with custom guard
-                t.isFunctionDeclaration(parent) ||
-                // @ts-expect-error TODO: replace with custom guard
-                t.isFunctionExpression(parent)
+                parent.type === 'ArrowFunctionExpression' ||
+                parent.type === 'FunctionDeclaration' ||
+                parent.type === 'FunctionExpression'
             ) {
                 return true;
             }
