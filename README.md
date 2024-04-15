@@ -59,7 +59,7 @@ You can customize the logger functions that are used to log errors in your proje
 ```json
 {
     "settings": {
-        "handle-errors": {
+        "handleErrors": {
             "loggerFunctions": [
                 "console.error", 
                 "console.warn", 
