@@ -1,6 +1,7 @@
 import { Rule } from 'eslint';
 import { BlockStatement, ReturnStatement, ThrowStatement } from 'estree';
 import t from '@babel/types';
+import { Settings } from './settings';
 
 interface ScopeStackEntry {
     isErrorHandled: boolean;
@@ -13,7 +14,7 @@ interface BlockStackEntry {
     isErrorHandled: boolean;
 }
 
-export function createLoggerCallTracker(report: (node: Rule.Node) => void) {
+export function createLoggerCallTracker(settings: Settings, report: (node: Rule.Node) => void) {
     const scopesStack: ScopeStackEntry[] = [];
     const blocksStack: BlockStackEntry[] = [];
 

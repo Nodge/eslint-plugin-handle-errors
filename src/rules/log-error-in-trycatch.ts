@@ -1,8 +1,6 @@
 import { createRule } from '../utils/createRule';
 import { createLoggerCallTracker, createCallExpression } from '../utils/loggerCallTracker';
-
-// TODO: add option to specify custom loggers
-const loggers = ['console.error', 'console.warn', 'Sentry.captureException'] as const;
+import { parseSettings } from '../utils/settings';
 
 export const logErrorInTrycatch = createRule({
     meta: {
@@ -21,7 +19,8 @@ export const logErrorInTrycatch = createRule({
         schema: [],
     },
     create(context) {
-        const tracker = createLoggerCallTracker(node => {
+        const settings = parseSettings(context.settings);
+        const tracker = createLoggerCallTracker(settings, node => {
             context.report({
                 node,
                 messageId: 'error-not-handled',
@@ -40,7 +39,7 @@ export const logErrorInTrycatch = createRule({
             'CatchClause > BlockStatement > ThrowStatement': tracker.onErrorProccessingInRoot,
             'CatchClause BlockStatement ThrowStatement': tracker.onErrorProccessingInBlock,
 
-            ...loggers.reduce((acc, logger) => {
+            ...settings.loggerFunctions.reduce((acc, logger) => {
                 Object.assign(acc, {
                     [`CatchClause > BlockStatement > ExpressionStatement > ${createCallExpression(logger)}`]:
                         tracker.onErrorProccessingInRoot,

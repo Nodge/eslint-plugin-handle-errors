@@ -60,7 +60,12 @@ You can customize the logger functions that are used to log errors in your proje
 {
     "settings": {
         "handle-errors": {
-            "loggerFunctions": ["console.error", "console.warn", "Sentry.captureException", "logError"]
+            "loggerFunctions": [
+                "console.error", 
+                "console.warn", 
+                "Sentry.captureException", 
+                "logError"
+            ]
         }
     }
 }

@@ -136,6 +136,11 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
             `,
         },
         {
+            settings: {
+                handleErrors: {
+                    loggerFunctions: ['logError'],
+                },
+            },
             code: dedent`
                a.then(callback).catch(logError)
             `,
