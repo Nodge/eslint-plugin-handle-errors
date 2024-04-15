@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "lib": ["es2023"],
+        "module": "node16",
+        "target": "es2022",
+        "moduleResolution": "node16",
+        "resolveJsonModule": true,
+        "allowJs": false,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "isolatedModules": true,
+        "importHelpers": false,
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "skipLibCheck": true,
+        "noEmit": true
+    },
+    "include": ["src"]
+}
