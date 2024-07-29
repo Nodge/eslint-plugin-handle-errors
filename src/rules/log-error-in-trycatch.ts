@@ -20,7 +20,7 @@ export const logErrorInTrycatch = createRule({
     },
     create(context) {
         const settings = parseSettings(context.settings);
-        const tracker = createLoggerCallTracker(settings, node => {
+        const tracker = createLoggerCallTracker(node => {
             context.report({
                 node,
                 messageId: 'error-not-handled',
