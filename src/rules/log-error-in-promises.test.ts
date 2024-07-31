@@ -5,55 +5,51 @@ import { logErrorInPromises } from './log-error-in-promises';
 runRuleTester('log-error-in-promises', logErrorInPromises, {
     valid: [
         {
+            name: 'should detect console.error() call',
             code: dedent`
-                a.catch(e => {
+                promise1.catch(e => {
+                    console.error(e)
+                })
+                promise2.catch(function(e) {
                     console.error(e)
                 })
             `,
         },
         {
+            name: 'should detect console.error() call with promise chain',
             code: dedent`
-                a.then(callback).catch(e => {
+                promise1.then(callback).catch(e => {
+                    console.error(e)
+                })
+                promise2.then(callback).catch(function(e) {
                     console.error(e)
                 })
             `,
         },
         {
+            name: 'should detect re-throw with original error',
             code: dedent`
-                a.then(callback).catch(e => {
+                promise1.then(callback).catch(e => {
+                    throw e
+                })
+                promise2.then(callback).catch(function(e) {
                     throw e
                 })
             `,
         },
         {
+            name: 'should detect throw with new error',
             code: dedent`
-                a.then(callback).catch(e => {
+                promise1.then(callback).catch(e => {
+                   throw new Error()
+                })
+                promise2.then(callback).catch(function(e) {
                    throw new Error()
                 })
             `,
         },
         {
-            code: dedent`
-                a.then(callback).catch(function(e) {
-                    console.error(e)
-                })
-            `,
-        },
-        {
-            code: dedent`
-                a.then(callback).catch(function(e) {
-                    throw e
-                })
-            `,
-        },
-        {
-            code: dedent`
-                a.then(callback).catch(function(e) {
-                    throw new Error()
-                })
-            `,
-        },
-        {
+            name: 'should work with promises inside try-catch block',
             code: dedent`
                 try {
                     promise.then(a).catch(e => {
@@ -65,6 +61,7 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
             `,
         },
         {
+            name: 'should work with nested promises',
             code: dedent`
                 promise1.then(a).catch(e => {
                     throw e
@@ -75,8 +72,9 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
             `,
         },
         {
+            name: 'should work with arrow function declared inside the catch function',
             code: dedent`
-                promise1.then(a).catch(e => {
+                promise.then(a).catch(e => {
                     const a = () => {
                         return
                     }
@@ -85,18 +83,9 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
             `,
         },
         {
+            name: 'should work with fat function declared inside the catch function',
             code: dedent`
-                promise1.then(a).catch(e => {
-                    function a() {
-                        return;
-                    }
-                    console.error(e)
-                })
-            `,
-        },
-        {
-            code: dedent`
-                promise1.then(a).catch(e => {
+                promise.then(a).catch(e => {
                     function a() {
                         return;
                     }
@@ -105,8 +94,9 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
             `,
         },
         {
+            name: 'should detect console calls inside every branch of code',
             code: dedent`
-                promise1.then(a).catch(e => {
+                promise.then(a).catch(e => {
                     if (isError(e)) {
                         console.warn(e);
                         return;
@@ -116,132 +106,118 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
             `,
         },
         {
+            name: 'should not yield on conditinal code if the error was logged before',
             code: dedent`
-                promise1.then(a).catch(e => {
+                promise.then(a).catch(e => {
+                    console.error(e)
+                    if (isError(e)) {
+                        return
+                    }
+                });
+            `,
+        },
+        {
+            name: 'should not yield on conditinal code if there is no return statement',
+            code: dedent`
+                promise.then(a).catch(e => {
                     if (e instanceof NetworkError) {
-                        showError('Network error');
+                        // do something
                     }
                     throw e;
                 })
             `,
         },
         {
+            name: 'should work with single-line arrow function',
             code: dedent`
-               a.then(callback).catch(e => console.error(e))
+               promise.then(callback).catch(e => console.error(e))
             `,
         },
         {
-            code: dedent`
-               a.then(callback).catch(console.error)
-            `,
-        },
-        {
+            name: 'should work custom logger function',
             settings: {
                 handleErrors: {
                     loggerFunctions: ['logError'],
                 },
             },
             code: dedent`
-               a.then(callback).catch(logError)
+                promise.then(callback).catch(e => {
+                    logError(e)
+                })
+            `,
+        },
+        {
+            name: 'should work with promise.catch with the reference to a logger function',
+            code: dedent`
+                promise.then(callback).catch(console.error)
+            `,
+        },
+        {
+            name: 'should work with promise.catch with the reference to a custom logger function',
+            settings: {
+                handleErrors: {
+                    loggerFunctions: ['logError'],
+                },
+            },
+            code: dedent`
+                promise.then(callback).catch(logError)
             `,
         },
     ],
     invalid: [
         {
+            name: 'should not accept unknown functions as error logger',
             code: dedent`
-                a.then(onSuccess).catch(e => {
-                    if (isError(e)) {
-                        throw e
-                    }
+                promise1.catch(e => {
+                    saveError(e)
                 })
+                promise2.then(callback).catch(function(e) {
+                    saveError(e)
+                })
+                promise3.then(callback).catch(saveError)
             `,
-            errors: [{ messageId: 'error-not-handled' }],
+            errors: [
+                { messageId: 'error-not-handled' },
+                { messageId: 'error-not-handled' },
+                { messageId: 'error-not-handled' },
+            ],
         },
         {
+            name: 'should yield if some branch of code does not log errors',
             code: dedent`
-                a.catch(e => {
+                promise1.catch(e => {
                     if (isError(e)) {
-                        throw e
+                        console.error(e)
                     }
                 })
-            `,
-            errors: [{ messageId: 'error-not-handled' }],
-        },
-        {
-            code: dedent`
-                a.catch(e => {
-                    if (isError(e)) {
-                        throw new Error();
-                    }
-                })
-            `,
-            errors: [{ messageId: 'error-not-handled' }],
-        },
-        {
-            code: dedent`
-                a.catch(e => {
+                promise2.catch(function(e) {
                     if (isError(e)) {
                         console.error(e)
                     }
                 })
             `,
-            errors: [{ messageId: 'error-not-handled' }],
+            errors: [{ messageId: 'error-not-handled' }, { messageId: 'error-not-handled' }],
         },
         {
+            name: 'should yield if the catch function re-throws only inside conditional code',
             code: dedent`
-                a.catch(e => {
-                    saveError(e)
-                })
-            `,
-            errors: [{ messageId: 'error-not-handled' }],
-        },
-        {
-            code: dedent`
-                a.then(callback).catch(function(e) {
-                    saveError(e)
-                })
-           `,
-            errors: [{ messageId: 'error-not-handled' }],
-        },
-        {
-            code: dedent`
-                a.then(callback).catch(function(e) {
-                    if (isError(e)) {
-                        console.error(e)
-                    }
-                })
-           `,
-            errors: [{ messageId: 'error-not-handled' }],
-        },
-        {
-            code: dedent`
-                a.then(callback).catch(function(e) {
+                promise1.catch(e => {
                     if (isError(e)) {
                         throw e
                     }
                 })
-           `,
-            errors: [{ messageId: 'error-not-handled' }],
-        },
-        {
-            code: dedent`
-                a.then(callback).catch(function(e) {
+                promise2.catch(function(e) {
                     if (isError(e)) {
-                        throw new Error()
+                        throw e
                     }
                 })
-           `,
-            errors: [{ messageId: 'error-not-handled' }],
-        },
-        {
-            code: dedent`
-                a.then(callback).catch(onError)
             `,
-            errors: [{ messageId: 'error-not-handled' }],
+            errors: [{ messageId: 'error-not-handled' }, { messageId: 'error-not-handled' }],
         },
         {
+            name: 'should yield if the catch function returns before re-throwing the error',
             code: dedent`
-                a.then(callback).catch(e => {
+                promise.then(callback).catch(e => {
                     return;
                     throw e;
                 })
@@ -249,8 +225,9 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
             errors: [{ messageId: 'error-not-handled' }],
         },
         {
+            name: 'should yield if the catch function returns before calling console.error',
             code: dedent`
-                a.then(callback).catch(e => {
+                promise.then(callback).catch(e => {
                     return;
                     console.error(e)
                 })
@@ -258,8 +235,21 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
             errors: [{ messageId: 'error-not-handled' }],
         },
         {
+            name: 'should yield if conditional code does not log the error',
             code: dedent`
-                a.then(callback).catch(e => {
+                promise.catch(e => {
+                    if (isError(e)) {
+                        return;
+                    }
+                    console.error(e);
+                })
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield if one of the conditional code blocks does not log the error',
+            code: dedent`
+                promise.then(callback).catch(e => {
                     if (e) {
                         setError(e);
                         return

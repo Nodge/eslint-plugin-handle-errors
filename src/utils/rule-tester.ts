@@ -1,11 +1,9 @@
 import { RuleTester } from 'eslint';
 import { describe, it } from 'vitest';
 
-// Override the default `it` and `describe` functions to use `vitest`
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(RuleTester as any).it = it;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(RuleTester as any).describe = describe;
+RuleTester.it = it;
+RuleTester.describe = describe;
+RuleTester.itOnly = it.only;
 
 export function runRuleTester(...args: Parameters<RuleTester['run']>) {
     const config = {
