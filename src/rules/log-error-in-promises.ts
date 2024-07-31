@@ -1,5 +1,7 @@
-import { createRule } from '../utils/createRule';
-import { createLoggerCallTracker, createCallExpression, createMemberExpression } from '../utils/loggerCallTracker';
+import { Rule } from 'eslint';
+import { createCallExpression, createMemberExpression } from '../utils/ast-helpers';
+import { createRule } from '../utils/create-rule';
+import { createLoggerCallTracker } from '../utils/logger-call-tracker';
 import { parseSettings } from '../utils/settings';
 
 export const logErrorInPromises = createRule({
@@ -28,36 +30,35 @@ export const logErrorInPromises = createRule({
         );
 
         const catchCall = 'CallExpression[callee.property.name="catch"]';
+        const catchCallWithArg = `${catchCall}[arguments.length=1]`;
 
-        return {
+        const visitor: Rule.RuleListener = {
             [`${catchCall}`]: tracker.onScopeEnter,
             [`${catchCall}:exit`]: tracker.onScopeExit,
             [`${catchCall} > :function`]: tracker.setFunctionBoundary,
-            [`${catchCall}[arguments.length=1] > :function BlockStatement`]: tracker.onBlockScopeEnter,
-            [`${catchCall}[arguments.length=1] > :function BlockStatement:exit`]: tracker.onBlockScopeExit,
-            [`${catchCall}[arguments.length=1] > :function ReturnStatement`]: tracker.onReturnStatement,
-            [`${catchCall}[arguments.length=1] > :function > BlockStatement > ThrowStatement`]:
-                tracker.onErrorProccessingInRoot,
-            [`${catchCall}[arguments.length=1] > :function BlockStatement ThrowStatement`]:
-                tracker.onErrorProccessingInBlock,
-
-            ...settings.loggerFunctions.reduce((acc, logger) => {
-                Object.assign(acc, {
-                    [`CallExpression[callee.property.name="catch"][arguments.length=1] > :function > BlockStatement > ExpressionStatement > ${createCallExpression(logger)}`]:
-                        tracker.onErrorProccessingInRoot,
-                    [`CallExpression[callee.property.name="catch"][arguments.length=1] > :function BlockStatement ${createCallExpression(logger)}`]:
-                        tracker.onErrorProccessingInBlock,
-
-                    [`CallExpression[callee.property.name="catch"][arguments.length=1] > ArrowFunctionExpression > ${createCallExpression(logger)}`]:
-                        tracker.onErrorProccessingInRoot,
-                    [`CallExpression[callee.property.name="catch"][arguments.length=1] > ArrowFunctionExpression BlockStatement ${createCallExpression(logger)}`]:
-                        tracker.onErrorProccessingInBlock,
-
-                    [`CallExpression[callee.property.name="catch"][arguments.length=1] > ${createMemberExpression(logger)}`]:
-                        tracker.onErrorProccessingInRoot,
-                });
-                return acc;
-            }, {}),
+            [`${catchCallWithArg} > :function BlockStatement`]: tracker.onBlockScopeEnter,
+            [`${catchCallWithArg} > :function BlockStatement:exit`]: tracker.onBlockScopeExit,
+            [`${catchCallWithArg} > :function ReturnStatement`]: tracker.onReturnStatement,
+            [`${catchCallWithArg} > :function > BlockStatement > ThrowStatement`]: tracker.onErrorProccessingInRoot,
+            [`${catchCallWithArg} > :function BlockStatement ThrowStatement`]: tracker.onErrorProccessingInBlock,
         };
+
+        for (const logger of settings.loggerFunctions) {
+            Object.assign(visitor, {
+                [`${catchCallWithArg} > :function > BlockStatement > ExpressionStatement > ${createCallExpression(logger)}`]:
+                    tracker.onErrorProccessingInRoot,
+                [`${catchCallWithArg} > :function BlockStatement ${createCallExpression(logger)}`]:
+                    tracker.onErrorProccessingInBlock,
+
+                [`${catchCallWithArg} > ArrowFunctionExpression > ${createCallExpression(logger)}`]:
+                    tracker.onErrorProccessingInRoot,
+                [`${catchCallWithArg} > ArrowFunctionExpression BlockStatement ${createCallExpression(logger)}`]:
+                    tracker.onErrorProccessingInBlock,
+
+                [`${catchCallWithArg} > ${createMemberExpression(logger)}`]: tracker.onErrorProccessingInRoot,
+            });
+        }
+
+        return visitor;
     },
 });

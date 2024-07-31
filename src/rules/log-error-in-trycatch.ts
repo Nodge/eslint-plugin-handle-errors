@@ -1,5 +1,7 @@
-import { createRule } from '../utils/createRule';
-import { createLoggerCallTracker, createCallExpression } from '../utils/loggerCallTracker';
+import type { Rule } from 'eslint';
+import { createCallExpression } from '../utils/ast-helpers';
+import { createRule } from '../utils/create-rule';
+import { createLoggerCallTracker } from '../utils/logger-call-tracker';
 import { parseSettings } from '../utils/settings';
 
 export const logErrorInTrycatch = createRule({
@@ -27,7 +29,7 @@ export const logErrorInTrycatch = createRule({
             });
         });
 
-        return {
+        const visitor: Rule.RuleListener = {
             CatchClause: node => {
                 tracker.onScopeEnter(node);
                 tracker.setFunctionBoundary(node);
@@ -38,15 +40,16 @@ export const logErrorInTrycatch = createRule({
             'CatchClause ReturnStatement': tracker.onReturnStatement,
             'CatchClause > BlockStatement > ThrowStatement': tracker.onErrorProccessingInRoot,
             'CatchClause BlockStatement ThrowStatement': tracker.onErrorProccessingInBlock,
-
-            ...settings.loggerFunctions.reduce((acc, logger) => {
-                Object.assign(acc, {
-                    [`CatchClause > BlockStatement > ExpressionStatement > ${createCallExpression(logger)}`]:
-                        tracker.onErrorProccessingInRoot,
-                    [`CatchClause BlockStatement ${createCallExpression(logger)}`]: tracker.onErrorProccessingInBlock,
-                });
-                return acc;
-            }, {}),
         };
+
+        for (const logger of settings.loggerFunctions) {
+            Object.assign(visitor, {
+                [`CatchClause > BlockStatement > ExpressionStatement > ${createCallExpression(logger)}`]:
+                    tracker.onErrorProccessingInRoot,
+                [`CatchClause BlockStatement ${createCallExpression(logger)}`]: tracker.onErrorProccessingInBlock,
+            });
+        }
+
+        return visitor;
     },
 });

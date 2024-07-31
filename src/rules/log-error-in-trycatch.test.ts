@@ -1,5 +1,5 @@
 import dedent from 'dedent';
-import { runRuleTester } from '../utils/ruleTester';
+import { runRuleTester } from '../utils/rule-tester';
 import { logErrorInTrycatch } from './log-error-in-trycatch';
 
 runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {

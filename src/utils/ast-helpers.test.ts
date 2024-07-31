@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createCallExpression, createMemberExpression } from './loggerCallTracker';
+import { createCallExpression, createMemberExpression } from './ast-helpers';
 
 describe('createCallExpression', () => {
     it('should parse function call', () => {

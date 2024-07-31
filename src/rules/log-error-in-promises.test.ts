@@ -1,5 +1,5 @@
 import dedent from 'dedent';
-import { runRuleTester } from '../utils/ruleTester';
+import { runRuleTester } from '../utils/rule-tester';
 import { logErrorInPromises } from './log-error-in-promises';
 
 runRuleTester('log-error-in-promises', logErrorInPromises, {
