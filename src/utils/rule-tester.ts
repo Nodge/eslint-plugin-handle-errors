@@ -9,11 +9,11 @@ import { describe, it } from 'vitest';
 
 export function runRuleTester(...args: Parameters<RuleTester['run']>) {
     const config = {
-        parserOptions: {
+        languageOptions: {
             ecmaVersion: 2022,
             sourceType: 'module',
         },
-    };
+    } as const;
 
     return new RuleTester(config).run(...args);
 }

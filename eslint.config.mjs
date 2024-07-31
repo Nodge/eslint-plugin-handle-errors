@@ -1,11 +1,14 @@
 // @ts-check
 
-import eslint from '@eslint/js';
-import tseslint from 'typescript-eslint';
+import js from '@eslint/js';
+import ts from 'typescript-eslint';
 import eslintPlugin from 'eslint-plugin-eslint-plugin';
 
-export default tseslint.config(
-    eslint.configs.recommended,
+export default ts.config(
+    {
+        ignores: ['dist/**/*'],
+    },
+    js.configs.recommended,
     eslintPlugin.configs['flat/recommended'],
-    ...tseslint.configs.recommended
+    ...ts.configs.recommended
 );
