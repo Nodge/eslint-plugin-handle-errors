@@ -1,0 +1,41 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 20.x
+                  cache: npm
+            - name: Install deps
+              run: npm ci
+            - name: ESLint
+              run: npm run ci:lint
+            - name: Typecheck
+              run: npm run ci:typecheck
+            - name: Prettier
+              run: npm run ci:fmt
+            - name: Build
+              run: npm run ci:build
+
+    test:
+        strategy:
+            matrix:
+                node-version: [18.x, 20.x, 22.x]
+                eslint-version: [7, 8, 9]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ matrix.node-version }}
+                  cache: npm
+            - name: Install deps
+              run: npm ci
+            - name: Setup eslint
+              run: npm i -D eslint@${{ matrix.eslint-version }}
+            - name: Tests
+              run: npm run ci:tests
