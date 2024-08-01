@@ -1,11 +1,16 @@
 export interface Settings {
-    readonly loggerFunctions: readonly string[];
+    readonly loggerFunctions: readonly LoggerFunction[];
 }
+
+type LoggerFunction = {
+    object?: string;
+    method: string;
+};
 
 const defaultLoggerFunctions = ['console.warn', 'console.error'] as const;
 
 const defaultSettings: Settings = {
-    loggerFunctions: defaultLoggerFunctions,
+    loggerFunctions: parseLoggerFunctions(defaultLoggerFunctions),
 };
 
 export function parseSettings(settings: unknown): Settings {
@@ -25,8 +30,24 @@ function parsePluginSettings(settings: Record<PropertyKey, unknown>): Settings {
     }
 
     return {
-        loggerFunctions,
+        loggerFunctions: parseLoggerFunctions(loggerFunctions),
     };
+}
+
+function parseLoggerFunctions(value: readonly string[]): LoggerFunction[] {
+    return value.map(name => {
+        const parts = name.split('.');
+
+        if (parts.length === 1) {
+            return { method: name };
+        }
+
+        if (parts.length === 2) {
+            return { object: parts[0]!, method: parts[1]! };
+        }
+
+        throw new Error(`Unsupported type of logger expression: ${name}`);
+    });
 }
 
 function isObject(settings: unknown): settings is Record<PropertyKey, unknown> {

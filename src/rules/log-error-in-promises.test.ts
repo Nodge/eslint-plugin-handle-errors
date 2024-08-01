@@ -163,6 +163,33 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
                 promise.then(callback).catch(logError)
             `,
         },
+        {
+            name: 'should work with passing the error to promise reject function',
+            code: dedent`
+                new Promise((resolve, reject) => {
+                    getPromise().catch(() => {
+                        reject();
+                    });
+                });
+
+                new Promise((resolve, reject) => {
+                    getPromise().catch(reject);
+                });
+
+                new Promise((resolve, reject) => {
+                    getPromise().catch(err => reject(err));
+                });
+            `,
+        },
+        {
+            name: 'should work with passing the error to renamed promise reject function',
+            code: dedent`
+                new Promise((resolve, reject) => {
+                    const renamed = reject
+                    getPromise().catch(renamed);
+                });
+            `,
+        },
     ],
     invalid: [
         {
@@ -260,6 +287,22 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
                     }
                     console.error(e)
                 })
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield for global reject function',
+            code: dedent`
+                promise.catch(e => reject(e));
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield for promise resolve function',
+            code: dedent`
+                new Promise((resolve) => {
+                    promise.catch(e => resolve(e));
+                });
             `,
             errors: [{ messageId: 'error-not-handled' }],
         },

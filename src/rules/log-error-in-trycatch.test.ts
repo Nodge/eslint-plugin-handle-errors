@@ -160,6 +160,18 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
                 }
             `,
         },
+        {
+            name: 'should work with passing the error to promise reject function',
+            code: dedent`
+                new Promise((resolve, reject) => {
+                    try {
+                        fn();
+                    } catch (err) {
+                        reject(err);
+                    }
+                });
+            `,
+        },
     ],
     invalid: [
         {
@@ -291,6 +303,30 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
                         console.error(e)
                     }
                 }
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield for global reject function',
+            code: dedent`
+                try {
+                    fn();
+                } catch (err) {
+                    reject(err);
+                }
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield for promise resolve function',
+            code: dedent`
+                new Promise((resolve) => {
+                    try {
+                        fn();
+                    } catch (err) {
+                        resolve(err);
+                    }
+                });
             `,
             errors: [{ messageId: 'error-not-handled' }],
         },

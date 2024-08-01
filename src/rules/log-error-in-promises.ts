@@ -1,5 +1,3 @@
-import { Rule } from 'eslint';
-import { createCallExpression, createMemberExpression } from '../utils/ast-helpers';
 import { createRule } from '../utils/create-rule';
 import { createLoggerCallTracker } from '../utils/logger-call-tracker';
 import { parseSettings } from '../utils/settings';
@@ -22,43 +20,25 @@ export const logErrorInPromises = createRule({
     },
     create(context) {
         const settings = parseSettings(context.settings);
-        const tracker = createLoggerCallTracker(node =>
-            context.report({
-                node,
-                messageId: 'error-not-handled',
-            })
-        );
+        const tracker = createLoggerCallTracker({
+            settings,
+            context,
+            messageId: 'error-not-handled',
+        });
 
         const catchCall = 'CallExpression[callee.property.name="catch"]';
         const catchCallWithArg = `${catchCall}[arguments.length=1]`;
 
-        const visitor: Rule.RuleListener = {
+        return {
             [`${catchCall}`]: tracker.onScopeEnter,
             [`${catchCall}:exit`]: tracker.onScopeExit,
-            [`${catchCall} > :function`]: tracker.setFunctionBoundary,
+            [`${catchCall} > :function`]: tracker.setScopeBoundary,
             [`${catchCallWithArg} > :function BlockStatement`]: tracker.onBlockScopeEnter,
             [`${catchCallWithArg} > :function BlockStatement:exit`]: tracker.onBlockScopeExit,
             [`${catchCallWithArg} > :function ReturnStatement`]: tracker.onReturnStatement,
-            [`${catchCallWithArg} > :function > BlockStatement > ThrowStatement`]: tracker.onErrorProccessingInRoot,
-            [`${catchCallWithArg} > :function BlockStatement ThrowStatement`]: tracker.onErrorProccessingInBlock,
+            [`${catchCallWithArg} > :function ThrowStatement`]: tracker.onThrowStatement,
+            [`${catchCallWithArg} > :function CallExpression > .callee`]: tracker.assertLoggerReference,
+            [`${catchCallWithArg} > .arguments:matches(Identifier, MemberExpression)`]: tracker.assertLoggerReference,
         };
-
-        for (const logger of settings.loggerFunctions) {
-            Object.assign(visitor, {
-                [`${catchCallWithArg} > :function > BlockStatement > ExpressionStatement > ${createCallExpression(logger)}`]:
-                    tracker.onErrorProccessingInRoot,
-                [`${catchCallWithArg} > :function BlockStatement ${createCallExpression(logger)}`]:
-                    tracker.onErrorProccessingInBlock,
-
-                [`${catchCallWithArg} > ArrowFunctionExpression > ${createCallExpression(logger)}`]:
-                    tracker.onErrorProccessingInRoot,
-                [`${catchCallWithArg} > ArrowFunctionExpression BlockStatement ${createCallExpression(logger)}`]:
-                    tracker.onErrorProccessingInBlock,
-
-                [`${catchCallWithArg} > ${createMemberExpression(logger)}`]: tracker.onErrorProccessingInRoot,
-            });
-        }
-
-        return visitor;
     },
 });

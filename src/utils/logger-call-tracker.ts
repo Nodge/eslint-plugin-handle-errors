@@ -1,20 +1,40 @@
-import { Rule } from 'eslint';
-import type { BlockStatement, ReturnStatement, ThrowStatement } from 'estree';
+import type { Rule, Scope } from 'eslint';
+import type {
+    BlockStatement,
+    ReturnStatement,
+    ThrowStatement,
+    MemberExpression,
+    Identifier,
+    NewExpression,
+} from 'estree';
+import { Settings } from './settings';
 
 interface ScopeStackEntry {
+    /** Is there an error logger call in the scope */
     isErrorHandled: boolean;
+    /** Has the scope code paths without error logger calls */
     hasUnhandledReturn: boolean;
+    /** Root node of the scope */
     node: Rule.Node;
-    functionBoundary?: Rule.Node;
+    /** Root block node of the scope */
+    boundaryNode?: Rule.Node;
 }
 
 interface BlockStackEntry {
+    /** Is there an error logger call in the block */
     isErrorHandled: boolean;
 }
 
-type Reporter = (node: Rule.Node) => void;
+interface TrackerParams {
+    /** Parsed plugin settings */
+    settings: Settings;
+    /** ESLint plugin execution context */
+    context: Rule.RuleContext;
+    /** Message ID for error reporing */
+    messageId: string;
+}
 
-export function createLoggerCallTracker(report: Reporter) {
+export function createLoggerCallTracker({ settings, context, messageId }: TrackerParams) {
     const scopesStack: ScopeStackEntry[] = [];
     const blocksStack: BlockStackEntry[] = [];
 
@@ -33,17 +53,17 @@ export function createLoggerCallTracker(report: Reporter) {
         }
 
         if (!scopeInfo.isErrorHandled || scopeInfo.hasUnhandledReturn) {
-            report(node);
+            context.report({ node, messageId });
         }
     };
 
-    const setFunctionBoundary = (node: Rule.Node) => {
+    const setScopeBoundary = (node: Rule.Node) => {
         const lastScope = scopesStack.at(-1);
         if (!lastScope) {
             throw new Error('no active scope');
         }
 
-        lastScope.functionBoundary = node;
+        lastScope.boundaryNode = node;
     };
 
     const isInsideInnerFunction = (node: Rule.Node) => {
@@ -51,7 +71,7 @@ export function createLoggerCallTracker(report: Reporter) {
 
         let parent = node.parent;
         while (parent) {
-            if (parent === lastScope?.node || parent === lastScope?.functionBoundary) {
+            if (parent === lastScope?.node || parent === lastScope?.boundaryNode) {
                 return false;
             }
 
@@ -68,7 +88,26 @@ export function createLoggerCallTracker(report: Reporter) {
         return false;
     };
 
+    const isBoundaryFunctionBlockScope = (node: BlockStatement & Rule.NodeParentExtension) => {
+        const lastScope = scopesStack.at(-1);
+        if (!lastScope) return;
+
+        const parent = node.parent;
+        if (!parent) return;
+
+        return parent === lastScope?.boundaryNode;
+    };
+
+    const markCodePathAsHandled = () => {
+        const isInsideBlock = blocksStack.length > 0;
+        const stack = isInsideBlock ? blocksStack : scopesStack;
+        const stackItem = stack.at(-1);
+        if (!stackItem) return;
+        stackItem.isErrorHandled = true;
+    };
+
     const onBlockScopeEnter = (node: BlockStatement & Rule.NodeParentExtension) => {
+        if (isBoundaryFunctionBlockScope(node)) return;
         if (isInsideInnerFunction(node)) return;
 
         blocksStack.push({
@@ -77,43 +116,136 @@ export function createLoggerCallTracker(report: Reporter) {
     };
 
     const onBlockScopeExit = (node: BlockStatement & Rule.NodeParentExtension) => {
+        if (isBoundaryFunctionBlockScope(node)) return;
         if (isInsideInnerFunction(node)) return;
 
         blocksStack.pop();
     };
 
     const onReturnStatement = (node: ReturnStatement & Rule.NodeParentExtension) => {
-        const lastScope = scopesStack.at(-1);
+        if (isInsideInnerFunction(node)) return;
 
-        if (!blocksStack.length || isInsideInnerFunction(node) || !lastScope || lastScope.isErrorHandled) {
+        const lastScope = scopesStack.at(-1);
+        if (!lastScope) return;
+
+        if (lastScope.isErrorHandled) return;
+
+        const currentBlock = blocksStack.at(-1);
+        if (currentBlock) {
+            if (!currentBlock.isErrorHandled) {
+                lastScope.hasUnhandledReturn = true;
+            }
             return;
         }
 
-        if (!blocksStack.at(-1)?.isErrorHandled) {
+        if (!lastScope.isErrorHandled) {
             lastScope.hasUnhandledReturn = true;
         }
     };
 
-    const onErrorProccessingInRoot = () => {
-        const lastScope = scopesStack.at(-1);
-        if (!lastScope) return;
-        lastScope.isErrorHandled = true;
+    const onThrowStatement = (node: ThrowStatement & Rule.NodeParentExtension) => {
+        if (isInsideInnerFunction(node)) return;
+
+        markCodePathAsHandled();
     };
 
-    const onErrorProccessingInBlock = (node: ThrowStatement & Rule.NodeParentExtension) => {
-        const lastBlock = blocksStack.at(-1);
-        if (!lastBlock || isInsideInnerFunction(node)) return;
-        lastBlock.isErrorHandled = true;
+    const assertLoggerReference = (node: Rule.Node) => {
+        if (isInsideInnerFunction(node)) return;
+
+        if (isLoggerReference(node)) {
+            markCodePathAsHandled();
+        }
+    };
+
+    const isLoggerReference = (node: Rule.Node): boolean => {
+        switch (node.type) {
+            case 'Identifier':
+                return isSupportedLogger(node) || isPromiseReject(node);
+            case 'MemberExpression':
+                return isSupportedLogger(node);
+            default:
+                return false;
+        }
+    };
+
+    const isSupportedLogger = (node: Identifier | MemberExpression): boolean => {
+        return settings.loggerFunctions.some(logger => {
+            if (node.type === 'Identifier') {
+                return !logger.object && logger.method === node.name;
+            }
+
+            if (node.type === 'MemberExpression') {
+                if (!('name' in node.object)) {
+                    return false;
+                }
+                if (!('name' in node.property)) {
+                    return false;
+                }
+                return logger.object === node.object.name && logger.method === node.property.name;
+            }
+        });
+    };
+
+    const isPromiseReject = (node: Identifier): boolean => {
+        const scope = context.sourceCode.getScope(node);
+        const variable = scope.references.find(variable => variable.identifier === node)?.resolved;
+        const definition = variable?.defs[0];
+        if (!definition) {
+            return false;
+        }
+
+        switch (definition.type) {
+            case 'Parameter':
+                return getParamIndex(definition) === 1 && isPromiseDeclaration(definition.node as Rule.Node);
+            case 'Variable':
+                if (definition.node.init?.type === 'Identifier') {
+                    return isPromiseReject(definition.node.init);
+                }
+                return false;
+            default:
+                return false;
+        }
+    };
+
+    const isPromiseDeclaration = (node: Rule.Node): boolean => {
+        let newExpression: NewExpression | null = null;
+
+        let parent = node;
+        while (parent) {
+            if (parent.type === 'NewExpression') {
+                newExpression = parent;
+                break;
+            }
+            parent = parent.parent;
+        }
+
+        if (!newExpression) {
+            return false;
+        }
+
+        if (newExpression.callee.type !== 'Identifier') {
+            return false;
+        }
+
+        if (newExpression.callee.name !== 'Promise') {
+            return false;
+        }
+
+        return true;
+    };
+
+    const getParamIndex = (definition: Scope.Definition): number => {
+        return definition.node.params.indexOf(definition.name);
     };
 
     return {
         onScopeEnter,
         onScopeExit,
-        setFunctionBoundary,
+        setScopeBoundary,
         onBlockScopeEnter,
         onBlockScopeExit,
         onReturnStatement,
-        onErrorProccessingInRoot,
-        onErrorProccessingInBlock,
+        onThrowStatement,
+        assertLoggerReference,
     };
 }
