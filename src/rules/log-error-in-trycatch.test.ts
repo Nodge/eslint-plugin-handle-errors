@@ -8,7 +8,7 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             name: 'should detect console.error() call',
             code: dedent`
                 try {
-                    await query()
+                    query()
                 } catch(e) {
                     console.error(e)
                 }
@@ -18,7 +18,7 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             name: 'should detect re-throw with original error',
             code: dedent`
                 try {
-                    await query()
+                    query()
                 } catch(e) {
                     throw e
                 }
@@ -28,7 +28,7 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             name: 'should detect throw with new error',
             code: dedent`
                 try {
-                    await query()
+                    query()
                 } catch(e) {
                     throw new Error()
                 }
@@ -39,7 +39,7 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             code: dedent`
                 try {
                     try {
-                        await query()
+                        query()
                     } catch (e) {
                         console.error(e)
                     }
@@ -53,7 +53,7 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             code: dedent`
                 try {
                     try {
-                        await query()
+                        query()
                     } catch (e) {
                         throw e
                     }
@@ -67,7 +67,7 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             code: dedent`
                 async function test() {
                     try {
-                        await query()
+                        query()
                     } catch(e) {
                         console.error(e)
                         return
@@ -79,7 +79,7 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             name: 'should work with arrow function declared inside the catch block',
             code: dedent`
                 try {
-                    await query()
+                    query()
                 } catch(e) {
                     const a = () => {
                         return
@@ -92,7 +92,7 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             name: 'should work with fat function declared inside the catch block',
             code: dedent`
                 try {
-                    await query()
+                    query()
                 } catch(e) {
                     function a() {
                         return;
@@ -136,7 +136,7 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             name: 'should not yield on conditinal code if there is no return statement',
             code: dedent`
                 try {
-                    await fetch();
+                    fetch();
                 } catch(e) {
                     if (e instanceof NetworkError) {
                         // do something
@@ -154,7 +154,7 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             },
             code: dedent`
                 try {
-                    await fetch();
+                    fetch();
                 } catch(e) {
                     logError(e);
                 }
@@ -178,7 +178,7 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             name: 'should not accept unknown functions as error logger',
             code: dedent`
                 try {
-                    await query()
+                    query()
                 } catch(e) {
                     saveError(e);
                 }
@@ -189,7 +189,7 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             name: 'should yield if some branch of code does not log errors',
             code: dedent`
                 try {
-                    await query()
+                    query()
                 } catch(e) {
                     if (isError(e)) {
                         console.error(e)
@@ -202,7 +202,7 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             name: 'should yield if the catch block re-throws only inside conditional code',
             code: dedent`
                 try {
-                    await query()
+                    query()
                 } catch(e) {
                     if (isError(e)) {
                         throw e
@@ -216,7 +216,7 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             code: dedent`
                 try {
                     try {
-                        await query()
+                        query()
                     } catch (e) {
                         throw e
                     }
@@ -231,7 +231,7 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             code: dedent`
                 try {
                     try {
-                        await query()
+                        query()
                     } catch (e) {
                         saveError(e);
                     }
