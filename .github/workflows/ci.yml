@@ -22,6 +22,7 @@ jobs:
               run: npm run ci:build
 
     test:
+        needs: [lint]
         strategy:
             matrix:
                 node-version: [18.x, 20.x, 22.x]
@@ -39,3 +40,24 @@ jobs:
               run: npm i -D eslint@${{ matrix.eslint-version }}
             - name: Tests
               run: npm run ci:tests
+
+    integration-tests:
+        needs: [test]
+        strategy:
+            matrix:
+                example: [eslint-v7, eslint-v9, typescript-eslint]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 20.x
+                  cache: npm
+            - name: Install deps
+              run: npm ci
+            - name: Build
+              run: npm run build
+            - name: Install example deps
+              run: cd examples/${{ matrix.example }} && npm ci
+            - name: Lint
+              run: cd examples/${{ matrix.example }} && npm run lint

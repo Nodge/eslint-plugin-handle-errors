@@ -1,0 +1,15 @@
+{
+    "name": "eslint-plugin-handle-errors",
+    "version": "0.0.0",
+    "private": true,
+    "scripts": {
+        "lint": "eslint src"
+    },
+    "author": "Maksim Zemskov <maxaz74@gmail.com>",
+    "license": "MIT",
+    "devDependencies": {
+        "eslint": "7.32.0",
+        "eslint-plugin-eslint-comments": "3.2.0",
+        "eslint-plugin-handle-errors": "file:../../"
+    }
+}
