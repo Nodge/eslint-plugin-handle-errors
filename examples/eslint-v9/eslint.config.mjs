@@ -20,5 +20,5 @@ export default [
         },
     },
     eslint.configs.recommended,
-    handleErrors.configs['flat/recommended'],
+    handleErrors.configs.recommended,
 ];
