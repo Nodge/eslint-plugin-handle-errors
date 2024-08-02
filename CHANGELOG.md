@@ -1,5 +1,11 @@
 # eslint-plugin-handle-errors
 
+## 0.3.1
+
+### Patch Changes
+
+-   [#8](https://github.com/Nodge/eslint-plugin-handle-errors/pull/8) [`3e450b5`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/3e450b5ceaf79aadf81db22a55a1b205c2c4241c) Thanks [@Nodge](https://github.com/Nodge)! - Fix release workflow
+
 ## 0.3.0
 
 ### Minor Changes
