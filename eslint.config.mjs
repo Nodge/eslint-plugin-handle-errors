@@ -6,7 +6,7 @@ import eslintPlugin from 'eslint-plugin-eslint-plugin';
 
 export default ts.config(
     {
-        ignores: ['dist/**/*'],
+        ignores: ['dist/**/*', 'examples/**/*'],
     },
     js.configs.recommended,
     eslintPlugin.configs['flat/recommended'],

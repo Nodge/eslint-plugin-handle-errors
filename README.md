@@ -34,8 +34,8 @@ import handleErrors from 'eslint-plugin-handle-errors';
 
 export default [
     {
-        ...handleErrors.configs['flat/recommended'],
         files: ['src/**'],
+        ...handleErrors.configs['flat/recommended'],
     },
 ];
 ```
@@ -46,7 +46,6 @@ export default [
 ```json
 {
     "extends": ["plugin:handle-errors/recommended"],
-    "plugins": ["handle-errors"]
 }
 ```
 
