@@ -30,8 +30,8 @@ jobs:
               with:
                   title: 'Upcoming Release'
                   commit: 'chore(release): version bump'
-                  publish: npm run publish
-                  version: npm run version
+                  publish: npm run ci:publish
+                  version: npm run ci:version
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
