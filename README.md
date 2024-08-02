@@ -44,7 +44,7 @@ export default [
 
 ```json
 {
-    "extends": ["plugin:handle-errors/legacy-recommended"],
+    "extends": ["plugin:handle-errors/legacy-recommended"]
 }
 ```
 
