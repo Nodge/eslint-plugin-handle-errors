@@ -30,13 +30,12 @@ pnpm add -D eslint-plugin-handle-errors
 (**eslint.config.js**)
 
 ```javascript
+import eslint from '@eslint/js';
 import handleErrors from 'eslint-plugin-handle-errors';
 
 export default [
-    {
-        files: ['src/**'],
-        ...handleErrors.configs['flat/recommended'],
-    },
+    eslint.configs.recommended, // optional
+    handleErrors.configs.recommended,
 ];
 ```
 
@@ -45,7 +44,7 @@ export default [
 
 ```json
 {
-    "extends": ["plugin:handle-errors/recommended"],
+    "extends": ["plugin:handle-errors/legacy-recommended"],
 }
 ```
 
@@ -55,19 +54,21 @@ export default [
 
 You can customize the logger functions that are used to log errors in your project.
 
-```json
-{
-    "settings": {
-        "handleErrors": {
-            "loggerFunctions": [
-                "console.error", 
-                "console.warn", 
-                "Sentry.captureException", 
-                "logError"
-            ]
-        }
-    }
-}
+```js
+import eslint from '@eslint/js';
+import handleErrors from 'eslint-plugin-handle-errors';
+
+export default [
+    {
+        settings: {
+            handleErrors: {
+                loggerFunctions: ['Sentry.captureException', 'reportError'],
+            },
+        },
+    },
+    eslint.configs.recommended,
+    handleErrors.configs.recommended,
+];
 ```
 
 ## Rules

@@ -29,7 +29,7 @@ export = {
     },
     ...index,
     configs: {
-        'flat/recommended': flatConfig,
-        recommended: legacyConfig,
+        recommended: flatConfig,
+        'legacy-recommended': legacyConfig,
     },
 };

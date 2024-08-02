@@ -1,7 +1,7 @@
 /* eslint-env node */
 module.exports = {
     root: true,
-    extends: ['plugin:handle-errors/recommended', 'plugin:eslint-comments/recommended'],
+    extends: ['plugin:handle-errors/legacy-recommended', 'plugin:eslint-comments/recommended'],
     parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
