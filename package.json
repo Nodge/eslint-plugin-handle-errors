@@ -17,7 +17,7 @@
     "homepage": "https://github.com/nodge/eslint-plugin-handle-errors",
     "repository": {
         "type": "git",
-        "url": "https://github.com/nodge/eslint-plugin-handle-errors"
+        "url": "git+https://github.com/nodge/eslint-plugin-handle-errors.git"
     },
     "engines": {
         "node": ">=18"
@@ -45,14 +45,15 @@
         "fmt": "prettier --write . --log-level error",
         "test": "vitest",
         "typecheck": "tsc --noEmit",
+        "changeset": "changeset add",
+        "update-lockfile": "npm i --package-lock-only",
         "ci:lint": "eslint .",
         "ci:fmt": "prettier --check .",
         "ci:typecheck": "tsc --noEmit",
         "ci:tests": "vitest --run",
         "ci:build": "tsup-node",
-        "changeset": "changeset add",
-        "version": "changeset version",
-        "publish": "npm run ci:build && changeset publish"
+        "ci:version": "changeset version && npm run update-lockfile",
+        "ci:publish": "npm run ci:build && changeset publish"
     },
     "devDependencies": {
         "@changesets/changelog-github": "0.5.0",
