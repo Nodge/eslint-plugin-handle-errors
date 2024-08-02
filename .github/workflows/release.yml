@@ -28,8 +28,8 @@ jobs:
               id: changesets
               uses: changesets/action@v1
               with:
-                  title: 'Release'
-                  commit: 'chore(release): version bump [skip ci]'
+                  title: 'Upcoming Release'
+                  commit: 'chore(release): version bump'
                   publish: npm run publish
                   version: npm run version
               env:
