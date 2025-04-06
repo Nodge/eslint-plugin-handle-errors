@@ -65,10 +65,10 @@
         "eslint-plugin-eslint-plugin": "6.2.0",
         "lefthook": "1.7.11",
         "prettier": "3.3.3",
-        "tsup": "8.2.3",
+        "tsup": "8.4.0",
         "typescript": "5.5.4",
         "typescript-eslint": "8.0.0",
-        "vitest": "2.1.9"
+        "vitest": "3.1.1"
     },
     "peerDependencies": {
         "eslint": ">=7"
