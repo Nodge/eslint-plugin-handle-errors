@@ -4,17 +4,17 @@
 
 ### Patch Changes
 
--   [#8](https://github.com/Nodge/eslint-plugin-handle-errors/pull/8) [`3e450b5`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/3e450b5ceaf79aadf81db22a55a1b205c2c4241c) Thanks [@Nodge](https://github.com/Nodge)! - Fix release workflow
+- [#8](https://github.com/Nodge/eslint-plugin-handle-errors/pull/8) [`3e450b5`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/3e450b5ceaf79aadf81db22a55a1b205c2c4241c) Thanks [@Nodge](https://github.com/Nodge)! - Fix release workflow
 
 ## 0.3.0
 
 ### Minor Changes
 
--   [#5](https://github.com/Nodge/eslint-plugin-handle-errors/pull/5) [`8920b2c`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/8920b2c6e0fa0576a3d61b4bdb00ee784c0e2fd3) Thanks [@Nodge](https://github.com/Nodge)! - [BREAKING] Use flat eslint config by default. The configs should be updates as follows:
+- [#5](https://github.com/Nodge/eslint-plugin-handle-errors/pull/5) [`8920b2c`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/8920b2c6e0fa0576a3d61b4bdb00ee784c0e2fd3) Thanks [@Nodge](https://github.com/Nodge)! - [BREAKING] Use flat eslint config by default. The configs should be updates as follows:
 
-    -   For flat eslint config:
+    - For flat eslint config:
 
-        -   Before:
+        - Before:
 
             ```javascript
             import eslint from '@eslint/js';
@@ -26,7 +26,7 @@
             ];
             ```
 
-        -   After:
+        - After:
 
             ```javascript
             import eslint from '@eslint/js';
@@ -38,9 +38,9 @@
             ];
             ```
 
-    -   For legacy esling config:
+    - For legacy esling config:
 
-        -   Before:
+        - Before:
 
             ```json
             {
@@ -48,7 +48,7 @@
             }
             ```
 
-        -   After:
+        - After:
 
             ```json
             {
@@ -56,7 +56,7 @@
             }
             ```
 
--   [#5](https://github.com/Nodge/eslint-plugin-handle-errors/pull/5) [`8920b2c`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/8920b2c6e0fa0576a3d61b4bdb00ee784c0e2fd3) Thanks [@Nodge](https://github.com/Nodge)! - feat: Support passing an error to a promise reject function like this:
+- [#5](https://github.com/Nodge/eslint-plugin-handle-errors/pull/5) [`8920b2c`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/8920b2c6e0fa0576a3d61b4bdb00ee784c0e2fd3) Thanks [@Nodge](https://github.com/Nodge)! - feat: Support passing an error to a promise reject function like this:
 
     ```ts
     new Promise((resolve, reject) => {
@@ -72,6 +72,6 @@
 
 ### Patch Changes
 
--   [#5](https://github.com/Nodge/eslint-plugin-handle-errors/pull/5) [`8920b2c`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/8920b2c6e0fa0576a3d61b4bdb00ee784c0e2fd3) Thanks [@Nodge](https://github.com/Nodge)! - chore: Upgrade eslint to v9 and pin dependencies
+- [#5](https://github.com/Nodge/eslint-plugin-handle-errors/pull/5) [`8920b2c`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/8920b2c6e0fa0576a3d61b4bdb00ee784c0e2fd3) Thanks [@Nodge](https://github.com/Nodge)! - chore: Upgrade eslint to v9 and pin dependencies
 
--   [#5](https://github.com/Nodge/eslint-plugin-handle-errors/pull/5) [`8920b2c`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/8920b2c6e0fa0576a3d61b4bdb00ee784c0e2fd3) Thanks [@Nodge](https://github.com/Nodge)! - test: Add integration tests againt node 18/20/22 and eslint 7/8/9
+- [#5](https://github.com/Nodge/eslint-plugin-handle-errors/pull/5) [`8920b2c`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/8920b2c6e0fa0576a3d61b4bdb00ee784c0e2fd3) Thanks [@Nodge](https://github.com/Nodge)! - test: Add integration tests againt node 18/20/22 and eslint 7/8/9
