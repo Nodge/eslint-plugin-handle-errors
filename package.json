@@ -12,12 +12,12 @@
     "author": "Maksim Zemskov <maxaz74@gmail.com>",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/nodge/eslint-plugin-handle-errors/issues"
+        "url": "https://github.com/Nodge/eslint-plugin-handle-errors/issues"
     },
-    "homepage": "https://github.com/nodge/eslint-plugin-handle-errors",
+    "homepage": "https://github.com/Nodge/eslint-plugin-handle-errors",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/nodge/eslint-plugin-handle-errors.git"
+        "url": "git+https://github.com/Nodge/eslint-plugin-handle-errors.git"
     },
     "packageManager": "pnpm@11.22.0",
     "engines": {
