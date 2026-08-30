@@ -28,11 +28,9 @@ jobs:
               run: pnpm install --frozen-lockfile
             - name: Create Release Pull Request or Publish to npm
               id: changesets
-              uses: changesets/action@v1
+              uses: changesets/action@v2
               with:
-                  title: 'Upcoming Release'
-                  commit: 'chore(release): version bump'
-                  publish: pnpm run ci:publish
-                  version: pnpm run ci:version
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  pr-title: 'Upcoming Release'
+                  commit-message: 'chore(release): version bump'
+                  publish-script: pnpm run ci:publish
+                  version-script: pnpm run ci:version
