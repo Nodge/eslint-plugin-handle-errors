@@ -1,5 +1,5 @@
 ---
-'eslint-plugin-handle-errors': major
+'eslint-plugin-handle-errors': minor
 ---
 
 Target ESLint 9 and 10, drop support for ESLint 7 and 8.
