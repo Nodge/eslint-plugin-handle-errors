@@ -39,7 +39,7 @@ jobs:
             - name: Install deps
               run: pnpm install --frozen-lockfile
             - name: Setup eslint
-              run: pnpm add -D eslint@${{ matrix.eslint-version }}
+              run: pnpm add -D -w eslint@${{ matrix.eslint-version }}
             - name: Tests
               run: pnpm run ci:tests
 
