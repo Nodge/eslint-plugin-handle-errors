@@ -1,35 +1,30 @@
+import type { ESLint, Linter } from 'eslint';
 import { recommededConfig } from './configs/recommended';
 import { logErrorInPromises } from './rules/log-error-in-promises';
 import { logErrorInTrycatch } from './rules/log-error-in-trycatch';
 
-const index = {
-    configs: {},
+/** Injected from package.json at build time, see tsup.config.ts */
+declare const __PLUGIN_VERSION__: string;
+
+const plugin = {
+    meta: {
+        name: 'eslint-plugin-handle-errors',
+        version: __PLUGIN_VERSION__,
+    },
     rules: {
         'log-error-in-trycatch': logErrorInTrycatch,
         'log-error-in-promises': logErrorInPromises,
     },
-};
-
-const legacyConfig = {
-    rules: recommededConfig,
-    plugins: ['handle-errors'],
-};
-
-const flatConfig = {
-    rules: recommededConfig,
-    plugins: {
-        'handle-errors': index,
-    },
-};
-
-export = {
-    meta: {
-        name: 'eslint-plugin-handle-errors',
-        version: '0.2.0',
-    },
-    ...index,
     configs: {
-        recommended: flatConfig,
-        'legacy-recommended': legacyConfig,
+        recommended: {
+            plugins: {
+                get 'handle-errors'(): ESLint.Plugin {
+                    return plugin;
+                },
+            },
+            rules: recommededConfig,
+        } satisfies Linter.Config,
     },
-};
+} satisfies ESLint.Plugin;
+
+export = plugin;

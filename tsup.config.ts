@@ -1,4 +1,5 @@
 import { defineConfig } from 'tsup';
+import pkg from './package.json';
 
 export default defineConfig({
     entry: ['src/index.ts'],
@@ -7,4 +8,7 @@ export default defineConfig({
     dts: true,
     sourcemap: true,
     clean: true,
+    define: {
+        __PLUGIN_VERSION__: JSON.stringify(pkg.version),
+    },
 });
