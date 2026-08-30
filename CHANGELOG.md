@@ -1,5 +1,34 @@
 # eslint-plugin-handle-errors
 
+## 0.4.0
+
+### Minor Changes
+
+- [#33](https://github.com/Nodge/eslint-plugin-handle-errors/pull/33) [`9e4aee1`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/9e4aee189eb8984f9c5b0b89861f8595582a73c5) Thanks [@Nodge](https://github.com/Nodge)! - Target ESLint 9 and 10, drop support for ESLint 7 and 8.
+
+    - `peerDependencies` is now `eslint: >=9`, and `engines.node` is
+      `^22.13 || >=24`. ESLint 10 still allows `^20.19`, but node 20 reached
+      end-of-life in April 2026 and is not tested here.
+    - The `legacy-recommended` config is removed. ESLint 10 dropped the `.eslintrc`
+      format entirely; stay on 0.3.1 if you still need it.
+    - `meta.version` is injected from `package.json` at build time instead of being
+      a hardcoded literal that had drifted to `0.2.0`.
+    - The plugin object registered inside `configs.recommended` now carries `meta`,
+      so ESLint can report the plugin name and version in the context where the
+      plugin is actually loaded.
+    - `log-error-in-promises` had `log-error-in-trycatch`'s description; both rules
+      now describe what they check and link to their documentation page.
+
+### Patch Changes
+
+- [#34](https://github.com/Nodge/eslint-plugin-handle-errors/pull/34) [`07f79af`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/07f79af2c79077d973da88367bed1b77a16b7f36) Thanks [@Nodge](https://github.com/Nodge)! - Build with tsdown instead of tsup. tsup's declaration pipeline hardcodes the
+  deprecated `baseUrl` compiler option, which is a hard error on TypeScript 6 and
+  stops working entirely on TypeScript 7; tsdown builds cleanly on both.
+
+    The bundle file names follow: `dist/index.cjs` and `dist/index.mjs`, with
+    `dist/index.d.cts` and `dist/index.d.mts` beside them. The `exports` map is
+    updated to match, so nothing changes for anyone importing the package by name.
+
 ## 0.3.1
 
 ### Patch Changes
