@@ -1,7 +1,3 @@
-packages:
-    - .
-    - examples/*
-
 autoInstallPeers: false
 
 allowBuilds:

@@ -57,5 +57,9 @@ jobs:
               run: pnpm install --frozen-lockfile
             - name: Build
               run: pnpm run build
+            - name: Install example deps
+              run: pnpm install --frozen-lockfile
+              working-directory: examples
             - name: Lint examples
-              run: pnpm --recursive --filter './examples/*' run lint
+              run: pnpm --recursive run lint
+              working-directory: examples
