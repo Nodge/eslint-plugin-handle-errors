@@ -21,7 +21,7 @@
     },
     "packageManager": "pnpm@11.22.0",
     "engines": {
-        "node": ">=18"
+        "node": "^22.13 || >=24"
     },
     "types": "./dist/index.d.ts",
     "exports": {
@@ -71,6 +71,6 @@
         "vitest": "4.1.11"
     },
     "peerDependencies": {
-        "eslint": ">=7"
+        "eslint": ">=9"
     }
 }

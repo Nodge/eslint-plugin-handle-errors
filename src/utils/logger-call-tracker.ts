@@ -189,7 +189,7 @@ export function createLoggerCallTracker({ settings, context, messageId }: Tracke
     };
 
     const isPromiseReject = (node: Identifier): boolean => {
-        const scope = getScope(node);
+        const scope = context.sourceCode.getScope(node);
         const variable = scope.references.find(variable => variable.identifier === node)?.resolved;
         const definition = variable?.defs[0];
         if (!definition) {
@@ -207,20 +207,6 @@ export function createLoggerCallTracker({ settings, context, messageId }: Tracke
             default:
                 return false;
         }
-    };
-
-    const getScope = (node: Identifier): Scope.Scope => {
-        if ('sourceCode' in context) {
-            return context.sourceCode.getScope(node);
-        }
-
-        if ('getScope' in context) {
-            // @ts-expect-error Compatibility with ESLint 7.x
-            return context.getScope();
-        }
-
-        // @ts-expect-error Compatibility with ESLint 8.x
-        return context.getSourceCode().getScope(node);
     };
 
     const isPromiseDeclaration = (node: Rule.Node): boolean => {

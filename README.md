@@ -4,6 +4,12 @@
 
 ESLint rules for handling errors.
 
+## Requirements
+
+ESLint 9 or 10, running on Node.js `^22.13 || >=24`. Only
+[flat config](https://eslint.org/docs/latest/use/configure/configuration-files)
+is supported.
+
 ## Installation
 
 npm
@@ -26,8 +32,7 @@ pnpm add -D eslint-plugin-handle-errors
 
 ## Usage
 
-[Flat config](https://eslint.org/docs/latest/use/configure/configuration-files-new)
-(**eslint.config.js**)
+**eslint.config.js**
 
 ```javascript
 import eslint from '@eslint/js';
@@ -37,15 +42,6 @@ export default [
     eslint.configs.recommended, // optional
     handleErrors.configs.recommended,
 ];
-```
-
-[Legacy config](https://eslint.org/docs/latest/use/configure/configuration-files)
-(**.eslintrc**)
-
-```json
-{
-    "extends": ["plugin:handle-errors/legacy-recommended"]
-}
 ```
 
 ## Settings
@@ -79,7 +75,7 @@ CLI option\
 💡 Manually fixable by
 [editor suggestions](https://eslint.org/docs/latest/developer-guide/working-with-rules#providing-suggestions)
 
-| Rule                                                                                                                       | Description                                      | ✅  | 🔧  | 💡  |
-| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | :-: | :-: | :-: |
-| [log-error-in-trycatch](https://github.com/Nodge/eslint-plugin-handle-errors/blob/main/src/rules/log-error-in-trycatch.ts) | Enforce error logging in Try-Catch blocks        | ✅  |     |     |
-| [log-error-in-promises](https://github.com/Nodge/eslint-plugin-handle-errors/blob/main/src/rules/log-error-in-promises.ts) | Enforces error logging in Promise.catch handlers | ✅  |     |     |
+| Rule                                                         | Description                                        | ✅  | 🔧  | 💡  |
+| ------------------------------------------------------------ | -------------------------------------------------- | :-: | :-: | :-: |
+| [log-error-in-trycatch](docs/rules/log-error-in-trycatch.md) | Enforce error logging in try/catch blocks          | ✅  |     |     |
+| [log-error-in-promises](docs/rules/log-error-in-promises.md) | Enforce error logging in promise .catch() handlers | ✅  |     |     |
