@@ -18,20 +18,22 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
             - uses: actions/setup-node@v4
               with:
-                  node-version: 20.x
-                  cache: npm
+                  node-version: 22.x
+                  cache: pnpm
+                  registry-url: 'https://registry.npmjs.org'
             - name: Install deps
-              run: npm ci
+              run: pnpm install --frozen-lockfile
             - name: Create Release Pull Request or Publish to npm
               id: changesets
               uses: changesets/action@v1
               with:
                   title: 'Upcoming Release'
                   commit: 'chore(release): version bump'
-                  publish: npm run ci:publish
-                  version: npm run ci:version
+                  publish: pnpm run ci:publish
+                  version: pnpm run ci:version
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

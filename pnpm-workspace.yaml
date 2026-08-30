@@ -1,0 +1,8 @@
+packages:
+    - examples/*
+
+autoInstallPeers: false
+
+allowBuilds:
+    esbuild: true
+    lefthook: true

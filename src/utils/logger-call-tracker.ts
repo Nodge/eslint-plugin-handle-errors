@@ -9,6 +9,8 @@ import type {
 } from 'estree';
 import { Settings } from './settings';
 
+type ParameterDefinition = Extract<Scope.Definition, { type: 'Parameter' }>;
+
 interface ScopeStackEntry {
     /** Is there an error logger call in the scope */
     isErrorHandled: boolean;
@@ -224,7 +226,7 @@ export function createLoggerCallTracker({ settings, context, messageId }: Tracke
     const isPromiseDeclaration = (node: Rule.Node): boolean => {
         let newExpression: NewExpression | null = null;
 
-        let parent = node;
+        let parent: Rule.Node | null = node;
         while (parent) {
             if (parent.type === 'NewExpression') {
                 newExpression = parent;
@@ -248,7 +250,7 @@ export function createLoggerCallTracker({ settings, context, messageId }: Tracke
         return true;
     };
 
-    const getParamIndex = (definition: Scope.Definition): number => {
+    const getParamIndex = (definition: ParameterDefinition): number => {
         return definition.node.params.indexOf(definition.name);
     };
 

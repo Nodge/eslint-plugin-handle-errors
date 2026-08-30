@@ -9,6 +9,6 @@ export default ts.config(
         ignores: ['dist/**/*', 'examples/**/*'],
     },
     js.configs.recommended,
-    eslintPlugin.configs['flat/recommended'],
+    eslintPlugin.configs.recommended,
     ...ts.configs.recommended
 );
