@@ -6,7 +6,6 @@ export const logErrorInTrycatch = createRule({
     meta: {
         type: 'problem',
         docs: {
-            category: 'Best Practices',
             description: 'Suggest logging an error in every branch inside a catch block',
             recommended: true,
             // todo: add url

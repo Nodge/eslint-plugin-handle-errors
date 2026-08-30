@@ -2,10 +2,10 @@ pre-commit:
     parallel: false
     commands:
         format:
-            run: npm run fmt
+            run: pnpm run fmt
             stage_fixed: true
         lint:
-            run: npm run lint -- --fix
+            run: pnpm run lint --fix
             stage_fixed: true
         typecheck:
-            run: npm run typecheck
+            run: pnpm run typecheck
