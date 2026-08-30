@@ -3,7 +3,7 @@ import { recommededConfig } from './configs/recommended';
 import { logErrorInPromises } from './rules/log-error-in-promises';
 import { logErrorInTrycatch } from './rules/log-error-in-trycatch';
 
-/** Injected from package.json at build time, see tsup.config.ts */
+/** Injected from package.json at build time, see tsdown.config.ts */
 declare const __PLUGIN_VERSION__: string;
 
 const plugin = {

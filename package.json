@@ -23,15 +23,15 @@
     "engines": {
         "node": "^22.13 || >=24"
     },
-    "types": "./dist/index.d.ts",
+    "types": "./dist/index.d.cts",
     "exports": {
         "import": {
             "types": "./dist/index.d.mts",
             "default": "./dist/index.mjs"
         },
         "require": {
-            "types": "./dist/index.d.ts",
-            "default": "./dist/index.js"
+            "types": "./dist/index.d.cts",
+            "default": "./dist/index.cjs"
         }
     },
     "files": [
@@ -40,8 +40,8 @@
         "dist"
     ],
     "scripts": {
-        "build": "tsup-node",
-        "build:watch": "tsup-node --watch",
+        "build": "tsdown",
+        "build:watch": "tsdown --watch",
         "lint": "eslint .",
         "fmt": "prettier --write . --log-level error",
         "test": "vitest",
@@ -51,7 +51,7 @@
         "ci:fmt": "prettier --check .",
         "ci:typecheck": "tsc --noEmit",
         "ci:tests": "vitest --run",
-        "ci:build": "tsup-node",
+        "ci:build": "tsdown",
         "ci:version": "changeset version",
         "ci:publish": "pnpm run ci:build && changeset publish"
     },
@@ -65,8 +65,8 @@
         "eslint-plugin-eslint-plugin": "7.6.2",
         "lefthook": "2.1.12",
         "prettier": "3.9.6",
-        "tsup": "8.5.1",
-        "typescript": "5.9.3",
+        "tsdown": "0.22.14",
+        "typescript": "6.0.3",
         "typescript-eslint": "8.68.0",
         "vitest": "4.1.11"
     },
