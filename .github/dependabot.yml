@@ -1,0 +1,42 @@
+version: 2
+
+updates:
+    # One entry for the whole workspace: dependabot reads pnpm-workspace.yaml and picks up
+    # examples/*/package.json alongside the root manifest.
+    - package-ecosystem: npm
+      directory: /
+      schedule:
+          interval: weekly
+          day: monday
+      open-pull-requests-limit: 5
+      commit-message:
+          prefix: chore(deps)
+      # pnpm 11 refuses to resolve releases younger than a day (minimumReleaseAge), so a PR
+      # raised on publication day would fail to install.
+      cooldown:
+          default-days: 3
+      groups:
+          # The package ships no runtime dependencies; everything here is tooling.
+          dev-dependencies:
+              patterns: ['*']
+              update-types: [minor, patch]
+      ignore:
+          # An ESLint major moves together with the peer range, the CI matrix and the examples,
+          # and examples/eslint-v9 has to stay on 9 by design.
+          - dependency-name: eslint
+            update-types: [version-update:semver-major]
+          - dependency-name: '@eslint/js'
+            update-types: [version-update:semver-major]
+
+    - package-ecosystem: github-actions
+      directory: /
+      schedule:
+          interval: weekly
+          day: monday
+      commit-message:
+          prefix: chore(ci)
+      cooldown:
+          default-days: 3
+      groups:
+          github-actions:
+              patterns: ['*']
