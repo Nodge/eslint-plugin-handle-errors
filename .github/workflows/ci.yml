@@ -6,6 +6,10 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
+              with:
+                  # changeset status diffs against the merge base with origin/main, which a
+                  # shallow clone does not have.
+                  fetch-depth: 0
             - uses: pnpm/action-setup@v4
             - uses: actions/setup-node@v4
               with:
@@ -21,6 +25,8 @@ jobs:
               run: pnpm run ci:fmt
             - name: Build
               run: pnpm run ci:build
+            - name: Changesets
+              run: pnpm run ci:changesets
 
     test:
         needs: [lint]

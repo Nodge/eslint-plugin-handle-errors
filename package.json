@@ -52,6 +52,7 @@
         "ci:typecheck": "tsc --noEmit",
         "ci:tests": "vitest --run",
         "ci:build": "tsdown",
+        "ci:changesets": "changeset status --since=origin/main",
         "ci:version": "changeset version",
         "ci:publish": "pnpm run ci:build && changeset publish"
     },
