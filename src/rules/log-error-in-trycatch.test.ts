@@ -161,6 +161,104 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             `,
         },
         {
+            name: 'should work with a logger behind a member chain',
+            settings: {
+                handleErrors: {
+                    loggerFunctions: ['app.log.error'],
+                },
+            },
+            code: dedent`
+                try {
+                    fetch();
+                } catch(e) {
+                    app.log.error(e);
+                }
+            `,
+        },
+        {
+            name: 'should work with a logger on this',
+            settings: {
+                handleErrors: {
+                    loggerFunctions: ['this.logger.error'],
+                },
+            },
+            code: dedent`
+                class Api {
+                    load() {
+                        try {
+                            fetch();
+                        } catch(e) {
+                            this.logger.error(e);
+                        }
+                    }
+                }
+            `,
+        },
+        {
+            name: 'should work with a logger on super',
+            settings: {
+                handleErrors: {
+                    loggerFunctions: ['super.logger.error'],
+                },
+            },
+            code: dedent`
+                class Api extends Base {
+                    load() {
+                        try {
+                            fetch();
+                        } catch(e) {
+                            super.logger.error(e);
+                        }
+                    }
+                }
+            `,
+        },
+        {
+            name: 'should work with a logger on import.meta',
+            settings: {
+                handleErrors: {
+                    loggerFunctions: ['import.meta.logger.error'],
+                },
+            },
+            code: dedent`
+                try {
+                    fetch();
+                } catch(e) {
+                    import.meta.logger.error(e);
+                }
+            `,
+        },
+        {
+            name: 'should work with a logger named with non-ascii identifiers',
+            settings: {
+                handleErrors: {
+                    loggerFunctions: ['журнал.ошибка'],
+                },
+            },
+            code: dedent`
+                try {
+                    fetch();
+                } catch(e) {
+                    журнал.ошибка(e);
+                }
+            `,
+        },
+        {
+            name: 'should treat an optional logger call as handling',
+            settings: {
+                handleErrors: {
+                    loggerFunctions: ['app.log.error'],
+                },
+            },
+            code: dedent`
+                try {
+                    fetch();
+                } catch(e) {
+                    app.log?.error(e);
+                }
+            `,
+        },
+        {
             name: 'should work with passing the error to promise reject function',
             code: dedent`
                 new Promise((resolve, reject) => {
@@ -174,6 +272,54 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
         },
     ],
     invalid: [
+        {
+            name: 'should not accept a shorter chain than the configured logger',
+            settings: {
+                handleErrors: {
+                    loggerFunctions: ['this.logger.error'],
+                },
+            },
+            code: dedent`
+                try {
+                    fetch();
+                } catch(e) {
+                    logger.error(e);
+                }
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should report a non-string logger function instead of crashing',
+            settings: {
+                handleErrors: {
+                    loggerFunctions: ['console.error', null],
+                },
+            },
+            code: dedent`
+                try {
+                    fetch();
+                } catch(e) {
+                    console.error(e);
+                }
+            `,
+            errors: [{ messageId: 'invalid-logger-function' }],
+        },
+        {
+            name: 'should report an unparseable logger function instead of crashing',
+            settings: {
+                handleErrors: {
+                    loggerFunctions: ['logger..error'],
+                },
+            },
+            code: dedent`
+                try {
+                    fetch();
+                } catch(e) {
+                    throw e;
+                }
+            `,
+            errors: [{ messageId: 'invalid-logger-function' }],
+        },
         {
             name: 'should not accept unknown functions as error logger',
             code: dedent`

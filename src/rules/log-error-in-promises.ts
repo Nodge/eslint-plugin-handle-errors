@@ -13,6 +13,8 @@ export const logErrorInPromises = createRule({
         messages: {
             'error-not-handled':
                 'In the catch block, you should either re-throw the original error, throw a new error, or log the error.',
+            'invalid-logger-function':
+                "Invalid entry in settings.handleErrors.loggerFunctions: '{{value}}'. Expected a function name or a member chain, such as 'reportError', 'logger.error' or 'this.logger.error'.",
         },
         schema: [],
     },
@@ -28,6 +30,11 @@ export const logErrorInPromises = createRule({
         const catchCallWithArg = `${catchCall}[arguments.length=1]`;
 
         return {
+            Program: node => {
+                for (const value of settings.invalidLoggerFunctions) {
+                    context.report({ node, messageId: 'invalid-logger-function', data: { value } });
+                }
+            },
             [`${catchCall}`]: tracker.onScopeEnter,
             [`${catchCall}:exit`]: tracker.onScopeExit,
             [`${catchCall} > :function`]: tracker.setScopeBoundary,

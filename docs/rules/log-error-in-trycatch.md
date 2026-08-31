@@ -89,6 +89,12 @@ The set of functions that count as loggers is configured through
 `settings.handleErrors.loggerFunctions`, shared by all rules in this plugin.
 It defaults to `['console.warn', 'console.error']`.
 
+An entry is a plain function name or a member chain of any depth, and the chain
+may start with `this` or `super`: `reportError`, `logger.error`,
+`this.logger.error`, `app.services.log.error`. Chains are matched as written, so `logger.error` does
+not match a `this.logger.error` call. An entry that is not a valid chain is
+reported on the file being linted.
+
 ```js
 export default [
     {

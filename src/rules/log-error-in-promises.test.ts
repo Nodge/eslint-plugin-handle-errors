@@ -5,6 +5,36 @@ import { logErrorInPromises } from './log-error-in-promises';
 runRuleTester('log-error-in-promises', logErrorInPromises, {
     valid: [
         {
+            name: 'should work with a logger behind a member chain',
+            settings: {
+                handleErrors: {
+                    loggerFunctions: ['app.log.error'],
+                },
+            },
+            code: dedent`
+                promise1.catch(e => {
+                    app.log.error(e)
+                })
+            `,
+        },
+        {
+            name: 'should work with a logger on this',
+            settings: {
+                handleErrors: {
+                    loggerFunctions: ['this.logger.error'],
+                },
+            },
+            code: dedent`
+                class Api {
+                    load() {
+                        return fetch().catch(e => {
+                            this.logger.error(e)
+                        })
+                    }
+                }
+            `,
+        },
+        {
             name: 'should detect console.error() call',
             code: dedent`
                 promise1.catch(e => {
@@ -192,6 +222,34 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
         },
     ],
     invalid: [
+        {
+            name: 'should not accept a shorter chain than the configured logger',
+            settings: {
+                handleErrors: {
+                    loggerFunctions: ['this.logger.error'],
+                },
+            },
+            code: dedent`
+                promise1.catch(e => {
+                    logger.error(e)
+                })
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should report an unparseable logger function instead of crashing',
+            settings: {
+                handleErrors: {
+                    loggerFunctions: ['logger..error'],
+                },
+            },
+            code: dedent`
+                promise1.catch(e => {
+                    throw e
+                })
+            `,
+            errors: [{ messageId: 'invalid-logger-function' }],
+        },
         {
             name: 'should not accept unknown functions as error logger',
             code: dedent`
