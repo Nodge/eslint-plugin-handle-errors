@@ -6,9 +6,7 @@ Enforce error logging in promise `.catch()` handlers.
 
 ## Rule details
 
-This is [`log-error-in-trycatch`](./log-error-in-trycatch.md) applied to the
-promise form of error handling. Every code path through a `.catch()` handler must
-either call a logger function, re-throw the original error, or throw a new one.
+This is [`log-error-in-trycatch`](./log-error-in-trycatch.md) applied to the promise form of error handling. Every code path through a `.catch()` handler must either call a logger function, re-throw the original error, or throw a new one.
 
 Examples of **incorrect** code:
 
@@ -56,19 +54,13 @@ new Promise((resolve, reject) => {
 
 ## Settings
 
-See [`log-error-in-trycatch`](./log-error-in-trycatch.md#settings) — the
-`settings.handleErrors.loggerFunctions` option is shared by both rules.
+See [`log-error-in-trycatch`](./log-error-in-trycatch.md#settings) — the `settings.handleErrors.loggerFunctions` option is shared by both rules.
 
 ## When not to use it
 
-The rule matches any `.catch()` call by shape, so a non-promise object with a
-`catch` method is reported as well. If your codebase has such an API, disable the
-rule at those call sites.
+The rule matches any `.catch()` call by shape, so a non-promise object with a `catch` method is reported as well. If your codebase has such an API, disable the rule at those call sites.
 
 ## Related
 
-- [`log-error-in-trycatch`](./log-error-in-trycatch.md) — the same requirement
-  for `try`/`catch` blocks.
-- [`preserve-caught-error`](https://eslint.org/docs/latest/rules/preserve-caught-error)
-  from ESLint core — requires the original error to be passed as `cause` when
-  you throw a new one.
+- [`log-error-in-trycatch`](./log-error-in-trycatch.md) — the same requirement for `try`/`catch` blocks.
+- [`preserve-caught-error`](https://eslint.org/docs/latest/rules/preserve-caught-error) from ESLint core — requires the original error to be passed as `cause` when you throw a new one.
