@@ -6,6 +6,7 @@ import type {
     MemberExpression,
     Identifier,
     NewExpression,
+    Node,
 } from 'estree';
 import { Settings } from './settings';
 
@@ -171,21 +172,35 @@ export function createLoggerCallTracker({ settings, context, messageId }: Tracke
     };
 
     const isSupportedLogger = (node: Identifier | MemberExpression): boolean => {
-        return settings.loggerFunctions.some(logger => {
-            if (node.type === 'Identifier') {
-                return !logger.object && logger.method === node.name;
-            }
+        const path = getMemberPath(node);
+        if (!path) return false;
 
-            if (node.type === 'MemberExpression') {
-                if (!('name' in node.object)) {
-                    return false;
-                }
-                if (!('name' in node.property)) {
-                    return false;
-                }
-                return logger.object === node.object.name && logger.method === node.property.name;
+        return settings.loggerFunctions.some(
+            logger =>
+                logger.path.length === path.length && logger.path.every((segment, index) => segment === path[index])
+        );
+    };
+
+    /** Flattens a member chain into its segments, or returns null for a shape that cannot be configured */
+    const getMemberPath = (node: Node): string[] | null => {
+        switch (node.type) {
+            case 'Identifier':
+                return [node.name];
+            case 'ThisExpression':
+                return ['this'];
+            case 'Super':
+                return ['super'];
+            case 'MetaProperty':
+                return [node.meta.name, node.property.name];
+            case 'MemberExpression': {
+                if (node.computed || node.property.type !== 'Identifier') return null;
+
+                const objectPath = getMemberPath(node.object);
+                return objectPath && [...objectPath, node.property.name];
             }
-        });
+            default:
+                return null;
+        }
     };
 
     const isPromiseReject = (node: Identifier): boolean => {

@@ -1,17 +1,20 @@
 export interface Settings {
     readonly loggerFunctions: readonly LoggerFunction[];
+    /** Entries of settings.handleErrors.loggerFunctions that could not be parsed */
+    readonly invalidLoggerFunctions: readonly string[];
 }
 
+/** A logger name split into segments: `this.logger.error` is `['this', 'logger', 'error']` */
 type LoggerFunction = {
-    object?: string;
-    method: string;
+    readonly path: readonly string[];
 };
 
 const defaultLoggerFunctions = ['console.warn', 'console.error'] as const;
 
-const defaultSettings: Settings = {
-    loggerFunctions: parseLoggerFunctions(defaultLoggerFunctions),
-};
+/** Matches a JS identifier, and the keywords `this`/`super` along with it */
+const segmentPattern = /^[\p{ID_Start}$_][\p{ID_Continue}$]*$/u;
+
+const defaultSettings: Settings = parseLoggerFunctions(defaultLoggerFunctions);
 
 export function parseSettings(settings: unknown): Settings {
     if (!isObject(settings)) return defaultSettings;
@@ -23,31 +26,39 @@ export function parseSettings(settings: unknown): Settings {
 function parsePluginSettings(settings: Record<PropertyKey, unknown>): Settings {
     const { loggerFunctions = defaultLoggerFunctions } = settings;
 
-    if (!isArrayOfString(loggerFunctions)) {
+    if (!Array.isArray(loggerFunctions)) {
         throw new Error(
             `Invalid configuration value for settings.handleErrors.loggerFunctions. The value must be array of strings. Got: ${loggerFunctions}`
         );
     }
 
-    return {
-        loggerFunctions: parseLoggerFunctions(loggerFunctions),
-    };
+    return parseLoggerFunctions(loggerFunctions);
 }
 
-function parseLoggerFunctions(value: readonly string[]): LoggerFunction[] {
-    return value.map(name => {
-        const parts = name.split('.');
+/**
+ * Splits logger names into segment paths. An unparseable entry is collected instead of throwing:
+ * a typo in the configuration should not take the whole ESLint run down.
+ */
+function parseLoggerFunctions(value: readonly unknown[]): Settings {
+    const loggerFunctions: LoggerFunction[] = [];
+    const invalidLoggerFunctions: string[] = [];
 
-        if (parts.length === 1) {
-            return { method: name };
+    for (const name of value) {
+        if (!isString(name)) {
+            invalidLoggerFunctions.push(JSON.stringify(name) ?? String(name));
+            continue;
         }
 
-        if (parts.length === 2) {
-            return { object: parts[0]!, method: parts[1]! };
-        }
+        const path = name.split('.');
 
-        throw new Error(`Unsupported type of logger expression: ${name}`);
-    });
+        if (path.every(segment => segmentPattern.test(segment))) {
+            loggerFunctions.push({ path });
+        } else {
+            invalidLoggerFunctions.push(name);
+        }
+    }
+
+    return { loggerFunctions, invalidLoggerFunctions };
 }
 
 function isObject(settings: unknown): settings is Record<PropertyKey, unknown> {
@@ -56,8 +67,4 @@ function isObject(settings: unknown): settings is Record<PropertyKey, unknown> {
 
 function isString(value: unknown): value is string {
     return typeof value === 'string';
-}
-
-function isArrayOfString(value: unknown): value is string[] {
-    return Array.isArray(value) && value.every(isString);
 }
