@@ -76,6 +76,57 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             `,
         },
         {
+            name: 'should detect a logger call returned from the catch block',
+            code: dedent`
+                function test() {
+                    try {
+                        query()
+                    } catch(e) {
+                        return console.error(e)
+                    }
+                }
+            `,
+        },
+        {
+            name: 'should detect a logger call in a loop that always runs at least once',
+            code: dedent`
+                try {
+                    query()
+                } catch(e) {
+                    do {
+                        console.error(e)
+                    } while (hasMore())
+                }
+            `,
+        },
+        {
+            name: 'should detect a logger call in a retry loop that never exits',
+            code: dedent`
+                try {
+                    query()
+                } catch(e) {
+                    for (;;) {
+                        console.error(e)
+                        retry()
+                    }
+                }
+            `,
+        },
+        {
+            name: 'should work with try-finally inside the catch block',
+            code: dedent`
+                try {
+                    query()
+                } catch(e) {
+                    try {
+                        console.error(e)
+                    } finally {
+                        cleanup()
+                    }
+                }
+            `,
+        },
+        {
             name: 'should work with arrow function declared inside the catch block',
             code: dedent`
                 try {
@@ -327,6 +378,48 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
                     query()
                 } catch(e) {
                     saveError(e);
+                }
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield if a conditional expression logs the error in one branch only',
+            code: dedent`
+                try {
+                    query()
+                } catch(e) {
+                    isError(e) ? console.error(e) : setError(e)
+                }
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield if the catch block retries forever without logging',
+            code: dedent`
+                try {
+                    query()
+                } catch(e) {
+                    for (;;) {
+                        retry()
+                    }
+                }
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield if the error is logged only in a loop that may not run',
+            code: dedent`
+                function test() {
+                    try {
+                        query()
+                    } catch(e) {
+                        while (hasMore()) {
+                            console.error(e)
+                            if (isFatal(e)) {
+                                return
+                            }
+                        }
+                    }
                 }
             `,
             errors: [{ messageId: 'error-not-handled' }],

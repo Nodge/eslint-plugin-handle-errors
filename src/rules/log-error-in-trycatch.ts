@@ -27,19 +27,14 @@ export const logErrorInTrycatch = createRule({
         });
 
         return {
+            ...tracker.codePathListeners,
             Program: node => {
                 for (const value of settings.invalidLoggerFunctions) {
                     context.report({ node, messageId: 'invalid-logger-function', data: { value } });
                 }
             },
-            CatchClause: node => {
-                tracker.onScopeEnter(node);
-                tracker.setScopeBoundary(node);
-            },
+            CatchClause: tracker.onScopeEnter,
             'CatchClause:exit': tracker.onScopeExit,
-            'CatchClause BlockStatement': tracker.onBlockScopeEnter,
-            'CatchClause BlockStatement:exit': tracker.onBlockScopeExit,
-            'CatchClause ReturnStatement': tracker.onReturnStatement,
             'CatchClause ThrowStatement': tracker.onThrowStatement,
             'CatchClause CallExpression > .callee': tracker.assertLoggerReference,
         };
