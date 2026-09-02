@@ -55,6 +55,8 @@ export const logErrorInPromises = createRule({
                 tracker.onScopeEnter(node, node.parent),
             [`${catchCallWithArg} > :function:exit`]: tracker.onScopeExit,
             [`${catchCallWithArg} > :function ThrowStatement`]: tracker.onThrowStatement,
+            [`${catchCallWithArg} > :function :matches(ReturnStatement, BreakStatement, ContinueStatement)`]:
+                tracker.onScopeExitStatement,
             [`${catchCallWithArg} > :function CallExpression > .callee`]: tracker.assertLoggerReference,
             [`${catchCallWithArg} > .arguments:matches(Identifier, MemberExpression)`]: (
                 node: (Identifier | MemberExpression) & Rule.NodeParentExtension

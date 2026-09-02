@@ -183,6 +183,19 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
             `,
         },
         {
+            name: 'should work with a logger call after a try-finally inside the catch function',
+            code: dedent`
+                promise.then(a).catch(e => {
+                    try {
+                        cleanup()
+                    } finally {
+                        release()
+                    }
+                    console.error(e)
+                })
+            `,
+        },
+        {
             name: 'should work with single-line arrow function',
             code: dedent`
                promise.then(callback).catch(e => console.error(e))
@@ -346,6 +359,20 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
                 })
             `,
             errors: [{ messageId: 'error-not-handled' }, { messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield if the catch function returns through a finalizer before logging',
+            code: dedent`
+                promise.then(callback).catch(e => {
+                    try {
+                        return
+                    } finally {
+                        cleanup()
+                    }
+                    console.error(e)
+                })
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
         },
         {
             name: 'should yield if the catch function returns before re-throwing the error',

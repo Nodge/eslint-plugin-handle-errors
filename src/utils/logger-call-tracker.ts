@@ -16,6 +16,8 @@ interface HandlingScope {
     entrySegments: readonly Rule.CodePathSegment[];
     /** Segments of that code path that lie inside the scope */
     segments: Set<Rule.CodePathSegment>;
+    /** Segments where control flow can leave the scope on its own, rather than by an exception */
+    exitSegments: Set<Rule.CodePathSegment>;
 }
 
 interface CodePathState {
@@ -94,6 +96,7 @@ export function createLoggerCallTracker({ settings, context, messageId }: Tracke
             // The scope starts inside the segments that are already open when its root node is visited
             entrySegments: [...state.currentSegments],
             segments: new Set(state.currentSegments),
+            exitSegments: new Set(),
         };
 
         activeScopes.push(scope);
@@ -101,8 +104,38 @@ export function createLoggerCallTracker({ settings, context, messageId }: Tracke
     };
 
     const onScopeExit = (node: Rule.Node) => {
-        if (activeScopes.at(-1)?.node === node) {
-            activeScopes.pop();
+        const scope = activeScopes.at(-1);
+        if (scope?.node !== node) return;
+
+        const state = getCurrentCodePath();
+        if (state?.codePath === scope.codePath) {
+            // Whatever is still open when the scope ends is where the block is left by running off its end
+            addExitSegments(scope, state);
+        }
+
+        activeScopes.pop();
+    };
+
+    /**
+     * Records the segments being traversed as a place control flow leaves the scope on its own.
+     * Only such segments are looked at as exits: an edge into an enclosing `catch` or `finally` means
+     * an exception is unwinding, which replaces the error being handled rather than dropping it.
+     */
+    const onScopeExitStatement = () => {
+        const state = getCurrentCodePath();
+        if (!state) return;
+
+        // A `return` inside a nested handler leaves the handler around it as well
+        for (const scope of activeScopes) {
+            if (scope.codePath === state.codePath) {
+                addExitSegments(scope, state);
+            }
+        }
+    };
+
+    const addExitSegments = (scope: HandlingScope, state: CodePathState) => {
+        for (const segment of state.currentSegments) {
+            scope.exitSegments.add(segment);
         }
     };
 
@@ -110,8 +143,13 @@ export function createLoggerCallTracker({ settings, context, messageId }: Tracke
     const reportUnhandledScope = (scope: HandlingScope) => {
         const isInScope = (segment: Rule.CodePathSegment) => scope.segments.has(segment);
 
+        // A `return` crossing a `finally` leaves the function downstream of the statement itself
+        const returnedSegments = new Set(scope.codePath.returnedSegments);
+
         /** Does control flow leave the scope at the end of the segment */
         const leavesScope = (segment: Rule.CodePathSegment): boolean => {
+            if (returnedSegments.has(segment)) return true;
+            if (!scope.exitSegments.has(segment)) return false;
             // No successors at all means a return, a throw or the end of the enclosing function
             if (segment.nextSegments.length === 0) return true;
 
@@ -134,12 +172,6 @@ export function createLoggerCallTracker({ settings, context, messageId }: Tracke
         for (const segment of scope.entrySegments) {
             enqueue(segment);
         }
-        for (const segment of scope.segments) {
-            // Everything before such a segment lies outside the scope, so it is an entry of its own
-            if (segment.prevSegments.every(prev => !isInScope(prev))) {
-                enqueue(segment);
-            }
-        }
 
         for (let index = 0; index < queue.length; index++) {
             const segment = queue[index];
@@ -156,30 +188,37 @@ export function createLoggerCallTracker({ settings, context, messageId }: Tracke
         }
 
         // Nothing leaves the scope unhandled, but a path can still be stuck inside it, as in `while (true)`.
-        // Such a path is fine only while every way on from it ends up handling the error.
-        const openSuccessors = new Map<Rule.CodePathSegment, number>();
-        const settled: Rule.CodePathSegment[] = [];
+        // A path is fine while it can still reach a segment that handles the error or leaves the scope.
+        const settled = new Set<Rule.CodePathSegment>();
+        const stack: Rule.CodePathSegment[] = [];
+
+        const settle = (segment: Rule.CodePathSegment) => {
+            if (settled.has(segment)) return;
+
+            settled.add(segment);
+            stack.push(segment);
+        };
 
         for (const segment of unhandled) {
-            const open = segment.nextSegments.filter(next => unhandled.has(next)).length;
-            openSuccessors.set(segment, open);
-            if (open === 0) settled.push(segment);
+            const leadsOn =
+                // Nothing unhandled follows, so the path ends here rather than circling inside the scope
+                segment.nextSegments.every(next => !unhandled.has(next)) ||
+                // A way on inside the scope: an edge out of it would be an exception unwinding
+                segment.nextSegments.some(next => next.reachable && isInScope(next) && !unhandled.has(next));
+
+            if (leadsOn) settle(segment);
         }
 
-        for (let index = 0; index < settled.length; index++) {
-            const segment = settled[index];
+        for (let index = 0; index < stack.length; index++) {
+            const segment = stack[index];
             if (!segment) continue;
 
             for (const prev of segment.prevSegments) {
-                const open = openSuccessors.get(prev);
-                if (open === undefined || open === 0) continue;
-
-                openSuccessors.set(prev, open - 1);
-                if (open === 1) settled.push(prev);
+                if (unhandled.has(prev)) settle(prev);
             }
         }
 
-        if ([...openSuccessors.values()].some(open => open > 0)) {
+        if (settled.size < unhandled.size) {
             context.report({ node: scope.reportNode, messageId });
         }
     };
@@ -300,6 +339,7 @@ export function createLoggerCallTracker({ settings, context, messageId }: Tracke
         codePathListeners,
         onScopeEnter,
         onScopeExit,
+        onScopeExitStatement,
         onThrowStatement: markCodePathAsHandled,
         assertLoggerReference,
         isLoggerReference,

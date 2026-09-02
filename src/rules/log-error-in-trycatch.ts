@@ -36,6 +36,7 @@ export const logErrorInTrycatch = createRule({
             CatchClause: tracker.onScopeEnter,
             'CatchClause:exit': tracker.onScopeExit,
             'CatchClause ThrowStatement': tracker.onThrowStatement,
+            'CatchClause :matches(ReturnStatement, BreakStatement, ContinueStatement)': tracker.onScopeExitStatement,
             'CatchClause CallExpression > .callee': tracker.assertLoggerReference,
         };
     },
