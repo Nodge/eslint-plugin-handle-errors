@@ -244,24 +244,39 @@ export function createLoggerCallTracker({ settings, context, messageId }: Tracke
         }
     };
 
+    /** Follows a chain of aliases, such as `const renamed = reject`, down to its declaration */
     const isPromiseReject = (node: Identifier): boolean => {
-        const scope = context.sourceCode.getScope(node);
-        const variable = scope.references.find(variable => variable.identifier === node)?.resolved;
-        const definition = variable?.defs[0];
-        if (!definition) {
-            return false;
-        }
+        // `var x = x` is legal, and so is a longer cycle of aliases: walk iteratively and never twice
+        const visited = new Set<Scope.Variable>();
+        let identifier = node;
 
-        switch (definition.type) {
-            case 'Parameter':
-                return getParamIndex(definition) === 1 && isPromiseDeclaration(definition.node as Rule.Node);
-            case 'Variable':
-                if (definition.node.init?.type === 'Identifier') {
-                    return isPromiseReject(definition.node.init);
+        for (;;) {
+            const scope = context.sourceCode.getScope(identifier);
+            const variable = scope.references.find(reference => reference.identifier === identifier)?.resolved;
+            if (!variable || visited.has(variable)) {
+                return false;
+            }
+            visited.add(variable);
+
+            const definition = variable.defs[0];
+            if (!definition) {
+                return false;
+            }
+
+            switch (definition.type) {
+                case 'Parameter':
+                    return getParamIndex(definition) === 1 && isPromiseDeclaration(definition.node as Rule.Node);
+                case 'Variable': {
+                    const alias = definition.node.init;
+                    if (alias?.type !== 'Identifier') {
+                        return false;
+                    }
+                    identifier = alias;
+                    break;
                 }
-                return false;
-            default:
-                return false;
+                default:
+                    return false;
+            }
         }
     };
 
