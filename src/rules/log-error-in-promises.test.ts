@@ -146,6 +146,21 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
             `,
         },
         {
+            name: 'should detect a logger call in every branch of a switch statement',
+            code: dedent`
+                promise.then(a).catch(e => {
+                    switch (e.code) {
+                        case 1:
+                            console.warn(e)
+                            return 1
+                        default:
+                            console.error(e)
+                            return 2
+                    }
+                })
+            `,
+        },
+        {
             name: 'should not yield on conditinal code if the error was logged before',
             code: dedent`
                 promise.then(a).catch(e => {
@@ -300,6 +315,21 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
                 })
             `,
             errors: [{ messageId: 'error-not-handled' }, { messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield if a switch case does not log the error',
+            code: dedent`
+                promise.then(a).catch(e => {
+                    switch (e.code) {
+                        case 1:
+                            console.error(e)
+                            return 1
+                        default:
+                            return 2
+                    }
+                })
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
         },
         {
             name: 'should yield if the catch function re-throws only inside conditional code',
