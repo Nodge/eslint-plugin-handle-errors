@@ -102,6 +102,16 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
             `,
         },
         {
+            name: 'should detect a logger call returned from the catch function',
+            code: dedent`
+                function test() {
+                    return fetch().catch(e => {
+                        return console.error(e)
+                    })
+                }
+            `,
+        },
+        {
             name: 'should work with arrow function declared inside the catch function',
             code: dedent`
                 promise.then(a).catch(e => {
@@ -266,6 +276,14 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
                 { messageId: 'error-not-handled' },
                 { messageId: 'error-not-handled' },
             ],
+        },
+        {
+            name: 'should yield if the catch call does not take exactly one handler',
+            code: dedent`
+                promise1.catch()
+                promise2.catch(console.error, cleanup)
+            `,
+            errors: [{ messageId: 'error-not-handled' }, { messageId: 'error-not-handled' }],
         },
         {
             name: 'should yield if some branch of code does not log errors',

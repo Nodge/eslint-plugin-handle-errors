@@ -1,31 +1,29 @@
 import type { Rule, Scope } from 'eslint';
-import type {
-    BlockStatement,
-    ReturnStatement,
-    ThrowStatement,
-    MemberExpression,
-    Identifier,
-    NewExpression,
-    Node,
-} from 'estree';
+import type { Identifier, MemberExpression, NewExpression, Node } from 'estree';
 import { Settings } from './settings';
 
 type ParameterDefinition = Extract<Scope.Definition, { type: 'Parameter' }>;
 
-interface ScopeStackEntry {
-    /** Is there an error logger call in the scope */
-    isErrorHandled: boolean;
-    /** Has the scope code paths without error logger calls */
-    hasUnhandledReturn: boolean;
-    /** Root node of the scope */
+/** A region of code that has to handle the error on every path leaving it */
+interface HandlingScope {
+    /** Node the scope is entered and exited on */
     node: Rule.Node;
-    /** Root block node of the scope */
-    boundaryNode?: Rule.Node;
+    /** Node the violation is reported on */
+    reportNode: Rule.Node;
+    /** Code path the scope belongs to */
+    codePath: Rule.CodePath;
+    /** Segments the scope is entered through */
+    entrySegments: readonly Rule.CodePathSegment[];
+    /** Segments of that code path that lie inside the scope */
+    segments: Set<Rule.CodePathSegment>;
 }
 
-interface BlockStackEntry {
-    /** Is there an error logger call in the block */
-    isErrorHandled: boolean;
+interface CodePathState {
+    codePath: Rule.CodePath;
+    /** Segments currently being traversed */
+    currentSegments: Set<Rule.CodePathSegment>;
+    /** Scopes of this code path, checked once its segment graph is complete */
+    scopes: HandlingScope[];
 }
 
 interface TrackerParams {
@@ -38,123 +36,166 @@ interface TrackerParams {
 }
 
 export function createLoggerCallTracker({ settings, context, messageId }: TrackerParams) {
-    const scopesStack: ScopeStackEntry[] = [];
-    const blocksStack: BlockStackEntry[] = [];
+    const codePathStack: CodePathState[] = [];
+    const activeScopes: HandlingScope[] = [];
+    const handledSegments = new Set<Rule.CodePathSegment>();
 
-    const onScopeEnter = (node: Rule.Node) => {
-        scopesStack.push({
+    const getCurrentCodePath = () => codePathStack.at(-1);
+
+    const onCodePathStart = (codePath: Rule.CodePath) => {
+        codePathStack.push({ codePath, currentSegments: new Set(), scopes: [] });
+    };
+
+    const onCodePathEnd = () => {
+        const state = codePathStack.pop();
+        if (!state) return;
+
+        for (const scope of state.scopes) {
+            reportUnhandledScope(scope);
+        }
+    };
+
+    const onSegmentStart = (segment: Rule.CodePathSegment) => {
+        const state = getCurrentCodePath();
+        if (!state) return;
+
+        state.currentSegments.add(segment);
+
+        for (const scope of activeScopes) {
+            // Segments of a nested function belong to its own code path, not to the scope around it
+            if (scope.codePath === state.codePath) {
+                scope.segments.add(segment);
+            }
+        }
+    };
+
+    const onSegmentEnd = (segment: Rule.CodePathSegment) => {
+        getCurrentCodePath()?.currentSegments.delete(segment);
+    };
+
+    /** Code path listeners the tracker relies on. Spread into the rule visitor as is. */
+    const codePathListeners: Rule.RuleListener = {
+        onCodePathStart,
+        onCodePathEnd,
+        onCodePathSegmentStart: onSegmentStart,
+        onUnreachableCodePathSegmentStart: onSegmentStart,
+        onCodePathSegmentEnd: onSegmentEnd,
+        onUnreachableCodePathSegmentEnd: onSegmentEnd,
+    };
+
+    const onScopeEnter = (node: Rule.Node, reportNode: Rule.Node = node) => {
+        const state = getCurrentCodePath();
+        if (!state) return;
+
+        const scope: HandlingScope = {
             node,
-            isErrorHandled: false,
-            hasUnhandledReturn: false,
-        });
+            reportNode,
+            codePath: state.codePath,
+            // The scope starts inside the segments that are already open when its root node is visited
+            entrySegments: [...state.currentSegments],
+            segments: new Set(state.currentSegments),
+        };
+
+        activeScopes.push(scope);
+        state.scopes.push(scope);
     };
 
     const onScopeExit = (node: Rule.Node) => {
-        const scopeInfo = scopesStack.pop();
-        if (!scopeInfo) {
-            throw new Error('scopeInfo is undefined');
-        }
-
-        if (!scopeInfo.isErrorHandled || scopeInfo.hasUnhandledReturn) {
-            context.report({ node, messageId });
+        if (activeScopes.at(-1)?.node === node) {
+            activeScopes.pop();
         }
     };
 
-    const setScopeBoundary = (node: Rule.Node) => {
-        const lastScope = scopesStack.at(-1);
-        if (!lastScope) {
-            throw new Error('no active scope');
+    /** Reports the scope unless the error is handled on every code path leaving it */
+    const reportUnhandledScope = (scope: HandlingScope) => {
+        const isInScope = (segment: Rule.CodePathSegment) => scope.segments.has(segment);
+
+        /** Does control flow leave the scope at the end of the segment */
+        const leavesScope = (segment: Rule.CodePathSegment): boolean => {
+            // No successors at all means a return, a throw or the end of the enclosing function
+            if (segment.nextSegments.length === 0) return true;
+
+            return segment.nextSegments.some(next => !isInScope(next));
+        };
+
+        /** Segments the error can reach from the scope entry without being handled on the way */
+        const unhandled = new Set<Rule.CodePathSegment>();
+        const queue: Rule.CodePathSegment[] = [];
+
+        const enqueue = (segment: Rule.CodePathSegment) => {
+            if (!segment.reachable) return;
+            if (handledSegments.has(segment)) return;
+            if (unhandled.has(segment)) return;
+
+            unhandled.add(segment);
+            queue.push(segment);
+        };
+
+        for (const segment of scope.entrySegments) {
+            enqueue(segment);
+        }
+        for (const segment of scope.segments) {
+            // Everything before such a segment lies outside the scope, so it is an entry of its own
+            if (segment.prevSegments.every(prev => !isInScope(prev))) {
+                enqueue(segment);
+            }
         }
 
-        lastScope.boundaryNode = node;
-    };
+        for (let index = 0; index < queue.length; index++) {
+            const segment = queue[index];
+            if (!segment) continue;
 
-    const isInsideInnerFunction = (node: Rule.Node) => {
-        const lastScope = scopesStack.at(-1);
-
-        let parent = node.parent;
-        while (parent) {
-            if (parent === lastScope?.node || parent === lastScope?.boundaryNode) {
-                return false;
+            if (leavesScope(segment)) {
+                context.report({ node: scope.reportNode, messageId });
+                return;
             }
 
-            if (
-                parent.type === 'ArrowFunctionExpression' ||
-                parent.type === 'FunctionDeclaration' ||
-                parent.type === 'FunctionExpression'
-            ) {
-                return true;
+            for (const next of segment.nextSegments) {
+                if (isInScope(next)) enqueue(next);
             }
-
-            parent = parent.parent;
         }
-        return false;
-    };
 
-    const isBoundaryFunctionBlockScope = (node: BlockStatement & Rule.NodeParentExtension) => {
-        const lastScope = scopesStack.at(-1);
-        if (!lastScope) return;
+        // Nothing leaves the scope unhandled, but a path can still be stuck inside it, as in `while (true)`.
+        // Such a path is fine only while every way on from it ends up handling the error.
+        const openSuccessors = new Map<Rule.CodePathSegment, number>();
+        const settled: Rule.CodePathSegment[] = [];
 
-        const parent = node.parent;
-        if (!parent) return;
+        for (const segment of unhandled) {
+            const open = segment.nextSegments.filter(next => unhandled.has(next)).length;
+            openSuccessors.set(segment, open);
+            if (open === 0) settled.push(segment);
+        }
 
-        return parent === lastScope?.boundaryNode;
+        for (let index = 0; index < settled.length; index++) {
+            const segment = settled[index];
+            if (!segment) continue;
+
+            for (const prev of segment.prevSegments) {
+                const open = openSuccessors.get(prev);
+                if (open === undefined || open === 0) continue;
+
+                openSuccessors.set(prev, open - 1);
+                if (open === 1) settled.push(prev);
+            }
+        }
+
+        if ([...openSuccessors.values()].some(open => open > 0)) {
+            context.report({ node: scope.reportNode, messageId });
+        }
     };
 
     const markCodePathAsHandled = () => {
-        const isInsideBlock = blocksStack.length > 0;
-        const stack = isInsideBlock ? blocksStack : scopesStack;
-        const stackItem = stack.at(-1);
-        if (!stackItem) return;
-        stackItem.isErrorHandled = true;
-    };
+        const state = getCurrentCodePath();
+        if (!state) return;
 
-    const onBlockScopeEnter = (node: BlockStatement & Rule.NodeParentExtension) => {
-        if (isBoundaryFunctionBlockScope(node)) return;
-        if (isInsideInnerFunction(node)) return;
-
-        blocksStack.push({
-            isErrorHandled: false,
-        });
-    };
-
-    const onBlockScopeExit = (node: BlockStatement & Rule.NodeParentExtension) => {
-        if (isBoundaryFunctionBlockScope(node)) return;
-        if (isInsideInnerFunction(node)) return;
-
-        blocksStack.pop();
-    };
-
-    const onReturnStatement = (node: ReturnStatement & Rule.NodeParentExtension) => {
-        if (isInsideInnerFunction(node)) return;
-
-        const lastScope = scopesStack.at(-1);
-        if (!lastScope) return;
-
-        if (lastScope.isErrorHandled) return;
-
-        const currentBlock = blocksStack.at(-1);
-        if (currentBlock) {
-            if (!currentBlock.isErrorHandled) {
-                lastScope.hasUnhandledReturn = true;
+        for (const segment of state.currentSegments) {
+            if (segment.reachable) {
+                handledSegments.add(segment);
             }
-            return;
         }
-
-        if (!lastScope.isErrorHandled) {
-            lastScope.hasUnhandledReturn = true;
-        }
-    };
-
-    const onThrowStatement = (node: ThrowStatement & Rule.NodeParentExtension) => {
-        if (isInsideInnerFunction(node)) return;
-
-        markCodePathAsHandled();
     };
 
     const assertLoggerReference = (node: Rule.Node) => {
-        if (isInsideInnerFunction(node)) return;
-
         if (isLoggerReference(node)) {
             markCodePathAsHandled();
         }
@@ -256,13 +297,11 @@ export function createLoggerCallTracker({ settings, context, messageId }: Tracke
     };
 
     return {
+        codePathListeners,
         onScopeEnter,
         onScopeExit,
-        setScopeBoundary,
-        onBlockScopeEnter,
-        onBlockScopeExit,
-        onReturnStatement,
-        onThrowStatement,
+        onThrowStatement: markCodePathAsHandled,
         assertLoggerReference,
+        isLoggerReference,
     };
 }
