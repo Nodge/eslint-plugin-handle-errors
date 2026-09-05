@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/eslint-plugin-handle-errors)](https://www.npmjs.com/package/eslint-plugin-handle-errors)
 
-Swallowed errors are the ones you learn about last. An empty `catch (e) {}`, a `.catch(() => null)` that was meant to be temporary, a handler that logs only on one branch. The failure disappears, the first symptom shows up somewhere else entirely, and a user reports it before your error monitoring does.
+Swallowed errors are the ones you learn about last. An empty `catch (e) {}`, a `.catch(() => null)` that was meant to be temporary, a handler that logs only on one branch. The failure disappears, your error monitoring never sees it, and the first sign is a user reporting a symptom somewhere else entirely.
 
 This plugin adds ESLint rules that report a `catch` block or a `.catch()` handler that drops the error. The handler has to log it, re-throw it, or throw a new error in its place. The check follows every code path through the handler instead of looking for a logger call anywhere inside it. A handler that logs inside an `if` and stays silent on the other branch is reported.
 
