@@ -2,9 +2,9 @@
 
 [![npm](https://img.shields.io/npm/v/eslint-plugin-handle-errors)](https://www.npmjs.com/package/eslint-plugin-handle-errors)
 
-Swallowed errors are the ones you learn about last. An empty `catch (e) {}`, a `.catch(() => null)` that was meant to be temporary, a handler that logs only on one branch. The failure disappears, your error monitoring never sees it, and the first sign is a user reporting a symptom somewhere else entirely.
+An empty `catch (e) {}` is the bug you learn about last. Nothing gets logged, your error monitoring never sees it, and the first report comes from a user.
 
-This plugin adds ESLint rules that report a `catch` block or a `.catch()` handler that drops the error. The handler has to log it, re-throw it, or throw a new error in its place. The check follows every code path through the handler instead of looking for a logger call anywhere inside it. A handler that logs inside an `if` and stays silent on the other branch is reported.
+This plugin adds ESLint rules for `catch` blocks and `.catch()` handlers. Each one has to log the error, re-throw it, or throw a new error in its place. The check follows every code path through the handler instead of looking for a logger call anywhere inside it, so a handler that logs in only one branch is reported:
 
 ```js
 try {
@@ -13,7 +13,7 @@ try {
     if (isNetworkError(e)) {
         console.error(e);
     }
-    // reported: every other error is swallowed here
+    // reported: every other error is dropped here
 }
 ```
 
@@ -32,7 +32,7 @@ try {
 }
 ```
 
-What counts as a logger is a setting. The default is `console.warn` and `console.error`. A list of your own, such as `Sentry.captureException` or `this.logger.error`, replaces it.
+Which functions count as loggers is a setting. The default is `console.warn` and `console.error`. Your own list, such as `Sentry.captureException` or `this.logger.error`, replaces it rather than extending it.
 
 ## Requirements
 
