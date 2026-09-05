@@ -17,16 +17,18 @@ try {
 }
 ```
 
-A logger call does not have to be the last statement, it has to be on every path:
+Each path can handle the error its own way, as long as none of them drops it:
 
 ```js
 try {
     await saveDraft(draft);
 } catch (e) {
     if (isNetworkError(e)) {
+        console.warn(e);
         scheduleRetry(draft);
+        return;
     }
-    console.error(e);
+    throw e;
 }
 ```
 
