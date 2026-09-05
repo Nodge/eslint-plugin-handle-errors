@@ -1,5 +1,29 @@
 # eslint-plugin-handle-errors
 
+## 0.5.0
+
+### Minor Changes
+
+- [#49](https://github.com/Nodge/eslint-plugin-handle-errors/pull/49) [`5451298`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/545129812d441f93243d29fb689ede2dd9e68a09) Thanks [@Nodge](https://github.com/Nodge)! - Both rules now work out the code paths through a catch block with the code path analysis of ESLint, instead of approximating them with a stack of block statements.
+
+    This fixes the false positive on a logger call returned from the handler: `return console.error(e)` is accepted by both rules now. `ReturnStatement` was visited before its own argument, so the return was recorded as an unhandled exit from the block before the logger inside it was seen.
+
+    The new engine also sees branches that are not blocks, and paths that never terminate, so a few more shapes change their verdict:
+
+    - reported now, accepted before: a `switch` where some case does not log, a conditional expression or an `&&` / `||` / `??` chain that logs in one branch only, and a catch block that retries forever without logging;
+    - accepted now, reported before: a logger call in a `do ... while` body or in any other loop that always runs at least once, an `if`/`else` that logs in both branches without returning, a logger call inside a bare nested block, and a catch block that no live code path reaches.
+
+- [#44](https://github.com/Nodge/eslint-plugin-handle-errors/pull/44) [`f754e11`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/f754e11ab81b5c0d0881883ec87fd9cda7805dc9) Thanks [@Nodge](https://github.com/Nodge)! - Support logger functions behind member chains of any depth, including a leading `this` or `super`.
+
+    `settings.handleErrors.loggerFunctions` accepted only `method` or `object.method`; anything longer,
+    such as `this.logger.error` or `app.services.log.error`, threw while the rule was being loaded and
+    took the whole ESLint run down with it. Chains of any depth are now both configurable and matched,
+    and an entry that cannot be parsed is reported on the linted file instead of throwing.
+
+### Patch Changes
+
+- [#54](https://github.com/Nodge/eslint-plugin-handle-errors/pull/54) [`9455981`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/9455981a49f9489c4f9a2f3cc3ba65f6e9eb0eb0) Thanks [@Nodge](https://github.com/Nodge)! - A handler that refers to a variable initialised from itself, such as `var handler = handler`, no longer takes the whole ESLint run down with `RangeError: Maximum call stack size exceeded`. Both rules follow chains of aliases when looking for a promise `reject`, and that walk kept no record of the variables it had already seen, so a cycle of aliases recursed forever and a long chain recursed as deep as the chain.
+
 ## 0.4.1
 
 ### Patch Changes
