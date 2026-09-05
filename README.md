@@ -109,3 +109,13 @@ CLI option\
 | ------------------------------------------------------------ | -------------------------------------------------- | :-: | :-: | :-: |
 | [log-error-in-trycatch](docs/rules/log-error-in-trycatch.md) | Enforce error logging in try/catch blocks          | ✅  |     |     |
 | [log-error-in-promises](docs/rules/log-error-in-promises.md) | Enforce error logging in promise .catch() handlers | ✅  |     |     |
+
+## Works together with
+
+This plugin checks that a `catch` block or a `.catch()` handler does something with the error. These rules close the neighbouring ways to lose one:
+
+- [`preserve-caught-error`](https://eslint.org/docs/latest/rules/preserve-caught-error) (ESLint core): when you throw a new error, the original has to go in as `cause`.
+- [`only-throw-error`](https://typescript-eslint.io/rules/only-throw-error) (typescript-eslint) or [`no-throw-literal`](https://eslint.org/docs/latest/rules/no-throw-literal) (ESLint core): thrown values have to be `Error` objects, so they carry a stack.
+- [`prefer-promise-reject-errors`](https://eslint.org/docs/latest/rules/prefer-promise-reject-errors) (ESLint core): the same for `reject()`, which this plugin counts as handling.
+- [`no-unsafe-finally`](https://eslint.org/docs/latest/rules/no-unsafe-finally) (ESLint core): a `return` inside `finally` discards the exception in flight.
+- [`handle-callback-err`](https://github.com/eslint-community/eslint-plugin-n/blob/master/docs/rules/handle-callback-err.md) (eslint-plugin-n): the `err` argument of a Node-style callback has to be used.
