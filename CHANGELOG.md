@@ -1,5 +1,15 @@
 # eslint-plugin-handle-errors
 
+## 0.5.1
+
+### Patch Changes
+
+- [#58](https://github.com/Nodge/eslint-plugin-handle-errors/pull/58) [`9451175`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/9451175cf30db6f588adf3d35171ce73cfb338c9) Thanks [@Nodge](https://github.com/Nodge)! - Add a `main` entry point and generate the rule docs from rule metadata.
+
+    `package.json` gained `"main": "./dist/index.cjs"`. The `exports` map only answers bare specifiers, so tools that `require()` the package by path — `eslint-doc-generator` among them — could not load the plugin at all.
+
+    Rule descriptions now carry the markdown they are rendered with (`` `try`/`catch` ``, `` `.catch()` ``), and `meta.docs.url` points at `Nodge` rather than `nodge`.
+
 ## 0.5.0
 
 ### Minor Changes
