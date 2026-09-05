@@ -554,6 +554,18 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             errors: [{ messageId: 'error-not-handled' }],
         },
         {
+            name: 'should yield for a handler initialised from itself',
+            code: dedent`
+                try {
+                    query()
+                } catch(e) {
+                    var handler = handler
+                    handler(e)
+                }
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
             name: 'should yield if some branch of code does not log errors',
             code: dedent`
                 try {

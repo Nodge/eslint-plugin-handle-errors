@@ -314,6 +314,16 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
             errors: [{ messageId: 'error-not-handled' }, { messageId: 'error-not-handled' }],
         },
         {
+            name: 'should yield for a handler initialised from itself',
+            code: dedent`
+                new Promise((resolve, reject) => {
+                    var renamed = renamed
+                    getPromise().catch(renamed)
+                })
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
             name: 'should yield if some branch of code does not log errors',
             code: dedent`
                 promise1.catch(e => {
