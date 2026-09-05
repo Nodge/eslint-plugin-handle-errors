@@ -2,7 +2,37 @@
 
 [![npm](https://img.shields.io/npm/v/eslint-plugin-handle-errors)](https://www.npmjs.com/package/eslint-plugin-handle-errors)
 
-ESLint rules for handling errors.
+An empty `catch (e) {}` is the bug you learn about last. Nothing gets logged, your error monitoring never sees it, and the first report comes from a user.
+
+This plugin adds ESLint rules for `catch` blocks and `.catch()` handlers. Each one has to log the error, re-throw it, or throw a new error in its place. The check follows every code path through the handler instead of looking for a logger call anywhere inside it, so a handler that logs in only one branch is reported:
+
+```js
+try {
+    await saveDraft(draft);
+} catch (e) {
+    if (isNetworkError(e)) {
+        console.error(e);
+    }
+    // reported: every other error is dropped here
+}
+```
+
+Each path can handle the error its own way, as long as none of them drops it:
+
+```js
+try {
+    await saveDraft(draft);
+} catch (e) {
+    if (isNetworkError(e)) {
+        console.warn(e);
+        scheduleRetry(draft);
+        return;
+    }
+    throw e;
+}
+```
+
+Which functions count as loggers is a setting. The default is `console.warn` and `console.error`. Your own list, such as `Sentry.captureException` or `this.logger.error`, replaces it rather than extending it.
 
 ## Requirements
 
