@@ -236,6 +236,96 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             `,
         },
         {
+            name: 'should work with a logger call after a try-finally inside the catch block',
+            code: dedent`
+                try {
+                    query()
+                } catch(e) {
+                    try {
+                        cleanup()
+                    } finally {
+                        release()
+                    }
+                    console.error(e)
+                }
+            `,
+        },
+        {
+            name: 'should work with a statement before the logger call when the try has a finalizer',
+            code: dedent`
+                try {
+                    query()
+                } catch(e) {
+                    cleanup()
+                    console.error(e)
+                } finally {
+                    release()
+                }
+            `,
+        },
+        {
+            name: 'should work with a nested try-catch opening the enclosing try block',
+            code: dedent`
+                try {
+                    try {
+                        query()
+                    } catch (e) {
+                        cleanup()
+                        console.error(e)
+                    }
+                } catch(outer) {
+                    console.error(outer)
+                }
+            `,
+        },
+        {
+            name: 'should ignore unreachable code after the error is re-thrown',
+            code: dedent`
+                try {
+                    query()
+                } catch(e) {
+                    throw e
+                    while (true) {
+                        break
+                    }
+                }
+            `,
+        },
+        {
+            name: 'should work with a logger call after a loop in the catch block',
+            code: dedent`
+                try {
+                    query()
+                } catch(e) {
+                    for (const listener of listeners) {
+                        listener(e)
+                    }
+                    console.error(e)
+                }
+            `,
+        },
+        {
+            name: 'should work with a try-finally inside a catch block that is itself inside a try',
+            code: dedent`
+                function test() {
+                    try {
+                        try {
+                            query()
+                        } catch (e) {
+                            try {
+                                cleanup()
+                            } finally {
+                                release()
+                            }
+                            console.error(e)
+                        }
+                    } finally {
+                        done()
+                    }
+                }
+            `,
+        },
+        {
             name: 'should work with custom logger functions',
             settings: {
                 handleErrors: {
@@ -573,6 +663,55 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
                                 return 2
                         }
                     }
+                }
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield if the catch block returns through a finalizer before logging',
+            code: dedent`
+                function test() {
+                    try {
+                        query()
+                    } catch(e) {
+                        try {
+                            return
+                        } finally {
+                            cleanup()
+                        }
+                        console.error(e)
+                    }
+                }
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield for both handlers if a nested catch block returns without logging',
+            code: dedent`
+                function test() {
+                    try {
+                        query()
+                    } catch(e) {
+                        try {
+                            retry()
+                        } catch (inner) {
+                            return
+                        }
+                        console.error(e)
+                    }
+                }
+            `,
+            errors: [{ messageId: 'error-not-handled' }, { messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield if the catch block does not log and the try has a finalizer',
+            code: dedent`
+                try {
+                    query()
+                } catch(e) {
+                    cleanup()
+                } finally {
+                    release()
                 }
             `,
             errors: [{ messageId: 'error-not-handled' }],
