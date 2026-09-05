@@ -2,9 +2,33 @@
 
 [![npm](https://img.shields.io/npm/v/eslint-plugin-handle-errors)](https://www.npmjs.com/package/eslint-plugin-handle-errors)
 
-Swallowed errors are the ones you learn about last. An empty `catch (e) {}`, a `.catch(() => null)` that was meant to be temporary, a handler that logs only on one branch: the failure disappears, and the first symptom shows up somewhere else entirely.
+Swallowed errors are the ones you learn about last. An empty `catch (e) {}`, a `.catch(() => null)` that was meant to be temporary, a handler that logs only on one branch: the failure disappears, and the first symptom shows up somewhere else entirely, reported by a user instead of your error monitoring.
 
 This plugin makes ESLint check that the errors your code catches go somewhere. A `catch` block or a `.catch()` handler has to do something with the error: log it, re-throw it, or throw a new error in its place. The check follows every code path through the handler instead of just looking for a logger call somewhere inside it, so a handler that logs inside an `if` and stays silent on the other branch is still reported.
+
+```js
+try {
+    await saveDraft(draft);
+} catch (e) {
+    if (isNetworkError(e)) {
+        console.error(e);
+    }
+    // reported: every other error is swallowed here
+}
+```
+
+A logger call does not have to be the last statement, it has to be on every path:
+
+```js
+try {
+    await saveDraft(draft);
+} catch (e) {
+    if (isNetworkError(e)) {
+        scheduleRetry(draft);
+    }
+    console.error(e);
+}
+```
 
 What counts as a logger is a setting. The default is `console.warn` and `console.error`; a list of your own, such as `Sentry.captureException` or `this.logger.error`, replaces it.
 
