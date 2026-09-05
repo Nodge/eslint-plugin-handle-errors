@@ -169,6 +169,45 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
             `,
         },
         {
+            name: 'should detect a logger call in every branch of a switch statement',
+            code: dedent`
+                function test() {
+                    try {
+                        query()
+                    } catch(e) {
+                        switch (e.code) {
+                            case 1:
+                                console.warn(e)
+                                return 1
+                            default:
+                                console.error(e)
+                                return 2
+                        }
+                    }
+                }
+            `,
+        },
+        {
+            name: 'should detect a logger call shared by fallthrough switch cases',
+            code: dedent`
+                function test() {
+                    try {
+                        query()
+                    } catch(e) {
+                        switch (e.code) {
+                            case 1:
+                            case 2:
+                                console.warn(e)
+                                return 1
+                            default:
+                                console.error(e)
+                                return 2
+                        }
+                    }
+                }
+            `,
+        },
+        {
             name: 'should not yield on conditinal code if the error was logged before',
             code: dedent`
                 function test() {
@@ -432,6 +471,107 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
                 } catch(e) {
                     if (isError(e)) {
                         console.error(e)
+                    }
+                }
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield if a switch case does not log the error',
+            code: dedent`
+                function test() {
+                    try {
+                        query()
+                    } catch(e) {
+                        switch (e.code) {
+                            case 1:
+                                console.error(e)
+                                return 1
+                            default:
+                                return 2
+                        }
+                    }
+                }
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield if a switch case falls through into a case that does not log',
+            code: dedent`
+                function test() {
+                    try {
+                        query()
+                    } catch(e) {
+                        switch (e.code) {
+                            case 1:
+                                console.warn(e)
+                            case 2:
+                                return 2
+                            default:
+                                console.error(e)
+                                return 3
+                        }
+                    }
+                }
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield if a switch case breaks out of the switch without logging',
+            code: dedent`
+                function test() {
+                    try {
+                        query()
+                    } catch(e) {
+                        switch (e.code) {
+                            case 1:
+                                console.warn(e)
+                                break
+                            default:
+                                break
+                        }
+                    }
+                }
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield if a default case declared in the middle does not log the error',
+            code: dedent`
+                function test() {
+                    try {
+                        query()
+                    } catch(e) {
+                        switch (e.code) {
+                            case 1:
+                                console.warn(e)
+                                return 1
+                            default:
+                                return 2
+                            case 2:
+                                console.warn(e)
+                                return 3
+                        }
+                    }
+                }
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield if a switch without a default case logs the error in every case',
+            code: dedent`
+                function test() {
+                    try {
+                        query()
+                    } catch(e) {
+                        switch (e.code) {
+                            case 1:
+                                console.error(e)
+                                return 1
+                            case 2:
+                                console.warn(e)
+                                return 2
+                        }
                     }
                 }
             `,
