@@ -1,8 +1,10 @@
 # log-error-in-trycatch
 
-Enforce error logging in `try`/`catch` blocks.
+📝 Enforce error logging in `try`/`catch` blocks.
 
-💼 Enabled in the ✅ `recommended` configuration.
+💼 This rule is enabled in the ✅ `recommended` config.
+
+<!-- end auto-generated rule header -->
 
 ## Rule details
 

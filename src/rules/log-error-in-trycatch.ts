@@ -6,9 +6,9 @@ export const logErrorInTrycatch = createRule({
     meta: {
         type: 'problem',
         docs: {
-            description: 'Enforce error logging in try/catch blocks',
+            description: 'Enforce error logging in `try`/`catch` blocks',
             recommended: true,
-            url: 'https://github.com/nodge/eslint-plugin-handle-errors/blob/main/docs/rules/log-error-in-trycatch.md',
+            url: 'https://github.com/Nodge/eslint-plugin-handle-errors/blob/main/docs/rules/log-error-in-trycatch.md',
         },
         messages: {
             'error-not-handled':

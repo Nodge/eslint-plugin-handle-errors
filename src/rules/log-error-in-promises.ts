@@ -17,9 +17,9 @@ export const logErrorInPromises = createRule({
     meta: {
         type: 'problem',
         docs: {
-            description: 'Enforce error logging in promise .catch() handlers',
+            description: 'Enforce error logging in promise `.catch()` handlers',
             recommended: true,
-            url: 'https://github.com/nodge/eslint-plugin-handle-errors/blob/main/docs/rules/log-error-in-promises.md',
+            url: 'https://github.com/Nodge/eslint-plugin-handle-errors/blob/main/docs/rules/log-error-in-promises.md',
         },
         messages: {
             'error-not-handled':

@@ -23,6 +23,7 @@
     "engines": {
         "node": "^22.13 || >=24"
     },
+    "main": "./dist/index.cjs",
     "types": "./dist/index.d.cts",
     "exports": {
         "import": {
@@ -46,12 +47,14 @@
         "fmt": "prettier --write . --log-level error",
         "test": "vitest",
         "typecheck": "tsc --noEmit",
+        "docs": "pnpm run build && eslint-doc-generator",
         "changeset": "changeset add",
         "ci:lint": "eslint .",
         "ci:fmt": "prettier --check .",
         "ci:typecheck": "tsc --noEmit",
         "ci:tests": "vitest --run",
         "ci:build": "tsdown",
+        "ci:docs": "eslint-doc-generator --check",
         "ci:changesets": "changeset status --since=origin/main",
         "ci:version": "changeset version",
         "ci:publish": "pnpm run ci:build && changeset publish"
@@ -63,6 +66,7 @@
         "@types/estree": "1.0.9",
         "dedent": "1.7.2",
         "eslint": "10.9.1",
+        "eslint-doc-generator": "3.7.1",
         "eslint-plugin-eslint-plugin": "7.6.2",
         "lefthook": "2.1.12",
         "prettier": "3.9.6",
