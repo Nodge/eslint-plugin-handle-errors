@@ -450,6 +450,56 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
                 });
             `,
         },
+        {
+            name: 'should work with a promise reject function that has a default value',
+            code: dedent`
+                new Promise((resolve, reject = noop) => {
+                    try {
+                        fn();
+                    } catch (err) {
+                        reject(err);
+                    }
+                });
+            `,
+        },
+        {
+            name: 'should work with a promise reject function overwritten after it was assigned',
+            code: dedent`
+                new Promise((resolve, reject) => {
+                    try {
+                        fn();
+                    } catch (err) {
+                        let renamed = reject;
+                        renamed = noop;
+                        renamed(err);
+                    }
+                });
+            `,
+        },
+        {
+            name: 'should work with a promise reject function assigned to a variable more than once',
+            code: dedent`
+                new Promise((resolve, reject) => {
+                    try {
+                        fn();
+                    } catch (err) {
+                        var renamed = noop;
+                        var renamed = reject;
+                        renamed(err);
+                    }
+                });
+
+                new Promise((resolve, reject) => {
+                    try {
+                        fn();
+                    } catch (err) {
+                        let renamed;
+                        renamed = reject;
+                        renamed(err);
+                    }
+                });
+            `,
+        },
     ],
     invalid: [
         {
@@ -859,6 +909,27 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
                 });
             `,
             errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield for a reject function of a callback that is not the promise executor',
+            code: dedent`
+                new Promise(cb((resolve, reject) => {
+                    try {
+                        fn();
+                    } catch (err) {
+                        reject(err);
+                    }
+                }));
+
+                new Promise(executor, (resolve, reject) => {
+                    try {
+                        fn();
+                    } catch (err) {
+                        reject(err);
+                    }
+                });
+            `,
+            errors: [{ messageId: 'error-not-handled' }, { messageId: 'error-not-handled' }],
         },
     ],
 });

@@ -1,8 +1,19 @@
 import type { Rule, Scope } from 'eslint';
-import type { Identifier, MemberExpression, NewExpression, Node } from 'estree';
+import type { Identifier, MemberExpression, Node } from 'estree';
 import { Settings } from './settings';
 
 type ParameterDefinition = Extract<Scope.Definition, { type: 'Parameter' }>;
+
+/**
+ * Nodes typescript-eslint puts between an expression and its parent, as in `fn satisfies Executor`.
+ * They are absent from the estree types, so they are matched by name.
+ */
+const typeAnnotationWrappers = new Set([
+    'TSAsExpression',
+    'TSSatisfiesExpression',
+    'TSNonNullExpression',
+    'TSInstantiationExpression',
+]);
 
 /** A region of code that has to handle the error on every path leaving it */
 interface HandlingScope {
@@ -283,71 +294,70 @@ export function createLoggerCallTracker({ settings, context, messageId }: Tracke
         }
     };
 
-    /** Follows a chain of aliases, such as `const renamed = reject`, down to its declaration */
+    /**
+     * Follows the writes that can put the `reject` parameter of a promise executor into a variable,
+     * such as `const renamed = reject`. Which write is live at the call is beyond what the rule tracks,
+     * so every write to the variable counts, wherever in the module it stands: `var renamed = noop;
+     * var renamed = reject` is accepted, a later `renamed = noop` goes unnoticed, and so does a write
+     * made from another function, as in `new Promise((resolve, reject) => { handle = reject })`.
+     * Of the two directions, accepting is the one that keeps quiet on code that does hand the error over.
+     */
     const isPromiseReject = (node: Identifier): boolean => {
         // `var x = x` is legal, and so is a longer cycle of aliases: walk iteratively and never twice
         const visited = new Set<Scope.Variable>();
-        let identifier = node;
+        const aliases: Identifier[] = [node];
 
-        for (;;) {
+        for (let index = 0; index < aliases.length; index++) {
+            const identifier = aliases[index];
+            if (!identifier) continue;
+
             const scope = context.sourceCode.getScope(identifier);
             const variable = scope.references.find(reference => reference.identifier === identifier)?.resolved;
-            if (!variable || visited.has(variable)) {
-                return false;
-            }
+            if (!variable || visited.has(variable)) continue;
             visited.add(variable);
 
-            const definition = variable.defs[0];
-            if (!definition) {
-                return false;
+            if (variable.defs.some(isRejectParameter)) {
+                return true;
             }
 
-            switch (definition.type) {
-                case 'Parameter':
-                    return getParamIndex(definition) === 1 && isPromiseDeclaration(definition.node as Rule.Node);
-                case 'Variable': {
-                    const alias = definition.node.init;
-                    if (alias?.type !== 'Identifier') {
-                        return false;
-                    }
-                    identifier = alias;
-                    break;
+            for (const reference of variable.references) {
+                if (reference.writeExpr?.type === 'Identifier') {
+                    aliases.push(reference.writeExpr);
                 }
-                default:
-                    return false;
             }
         }
+
+        return false;
     };
 
-    const isPromiseDeclaration = (node: Rule.Node): boolean => {
-        let newExpression: NewExpression | null = null;
+    const isRejectParameter = (definition: Scope.Definition): boolean => {
+        if (definition.type !== 'Parameter') return false;
 
-        let parent: Rule.Node | null = node;
-        while (parent) {
-            if (parent.type === 'NewExpression') {
-                newExpression = parent;
-                break;
-            }
-            parent = parent.parent;
-        }
-
-        if (!newExpression) {
-            return false;
-        }
-
-        if (newExpression.callee.type !== 'Identifier') {
-            return false;
-        }
-
-        if (newExpression.callee.name !== 'Promise') {
-            return false;
-        }
-
-        return true;
+        return getParamIndex(definition) === 1 && isPromiseExecutor(definition.node as Rule.Node);
     };
 
+    /** Is the function the executor of a `new Promise(...)`, rather than any function nested in one */
+    const isPromiseExecutor = (node: Rule.Node): boolean => {
+        let executor: Rule.Node = node;
+        while (executor.parent && typeAnnotationWrappers.has(executor.parent.type)) {
+            executor = executor.parent;
+        }
+
+        const parent = executor.parent;
+
+        return (
+            parent?.type === 'NewExpression' &&
+            parent.arguments[0] === executor &&
+            parent.callee.type === 'Identifier' &&
+            parent.callee.name === 'Promise'
+        );
+    };
+
+    /** Index of the parameter the definition names. A default value wraps it in an `AssignmentPattern`. */
     const getParamIndex = (definition: ParameterDefinition): number => {
-        return definition.node.params.indexOf(definition.name);
+        return definition.node.params.findIndex(
+            param => param === definition.name || (param.type === 'AssignmentPattern' && param.left === definition.name)
+        );
     };
 
     return {
