@@ -99,16 +99,17 @@ export default [
 
 ## Rules
 
-✅ Set in the `recommended` configuration\
-🔧 Automatically fixable by the [`--fix`](https://eslint.org/docs/latest/user-guide/command-line-interface#--fix)
-CLI option\
-💡 Manually fixable by
-[editor suggestions](https://eslint.org/docs/latest/developer-guide/working-with-rules#providing-suggestions)
+<!-- begin auto-generated rules list -->
 
-| Rule                                                         | Description                                        | ✅  | 🔧  | 💡  |
-| ------------------------------------------------------------ | -------------------------------------------------- | :-: | :-: | :-: |
-| [log-error-in-trycatch](docs/rules/log-error-in-trycatch.md) | Enforce error logging in try/catch blocks          | ✅  |     |     |
-| [log-error-in-promises](docs/rules/log-error-in-promises.md) | Enforce error logging in promise .catch() handlers | ✅  |     |     |
+💼 Configurations enabled in.\
+✅ Set in the `recommended` configuration.
+
+| Name                                                         | Description                                          | 💼  |
+| :----------------------------------------------------------- | :--------------------------------------------------- | :-- |
+| [log-error-in-promises](docs/rules/log-error-in-promises.md) | Enforce error logging in promise `.catch()` handlers | ✅  |
+| [log-error-in-trycatch](docs/rules/log-error-in-trycatch.md) | Enforce error logging in `try`/`catch` blocks        | ✅  |
+
+<!-- end auto-generated rules list -->
 
 ## Works together with
 

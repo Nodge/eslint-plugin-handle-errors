@@ -25,6 +25,8 @@ jobs:
               run: pnpm run ci:fmt
             - name: Build
               run: pnpm run ci:build
+            - name: Docs
+              run: pnpm run ci:docs
             - name: Changesets
               run: pnpm run ci:changesets
 
