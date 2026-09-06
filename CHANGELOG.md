@@ -1,5 +1,19 @@
 # eslint-plugin-handle-errors
 
+## 0.5.1
+
+### Patch Changes
+
+- [#60](https://github.com/Nodge/eslint-plugin-handle-errors/pull/60) [`eef99df`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/eef99df41f5b302dbb9034f79cdc84e4ac0f0fa2) Thanks [@Nodge](https://github.com/Nodge)! - Fix how `reject` of a `new Promise` executor is recognised.
+
+    Handing the error to `reject` counts as handling it, and three shapes were decided wrongly. A `reject` parameter with a default value (`(resolve, reject = noop) => ...`) and a variable written more than once (`var renamed = noop; var renamed = reject`) were reported although the error was handed over; so was a variable assigned after it was declared (`let renamed; renamed = reject`). In the other direction, a `reject` parameter of a callback that merely sits inside a `new Promise` argument, rather than being the executor itself, silently counted as handling and is now reported.
+
+- [#58](https://github.com/Nodge/eslint-plugin-handle-errors/pull/58) [`9451175`](https://github.com/Nodge/eslint-plugin-handle-errors/commit/9451175cf30db6f588adf3d35171ce73cfb338c9) Thanks [@Nodge](https://github.com/Nodge)! - Add a `main` entry point and generate the rule docs from rule metadata.
+
+    `package.json` gained `"main": "./dist/index.cjs"`. The `exports` map only answers bare specifiers, so tools that `require()` the package by path — `eslint-doc-generator` among them — could not load the plugin at all.
+
+    Rule descriptions now carry the markdown they are rendered with (`` `try`/`catch` ``, `` `.catch()` ``), and `meta.docs.url` points at `Nodge` rather than `nodge`.
+
 ## 0.5.0
 
 ### Minor Changes
