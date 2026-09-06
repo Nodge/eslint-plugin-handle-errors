@@ -28,6 +28,7 @@ jobs:
             - name: Docs
               run: pnpm run ci:docs
             - name: Changesets
+              if: github.head_ref != 'changeset-release/main' && github.ref != 'refs/heads/changeset-release/main'
               run: pnpm run ci:changesets
 
     test:
