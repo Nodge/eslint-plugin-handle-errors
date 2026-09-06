@@ -1,5 +1,5 @@
 import dedent from 'dedent';
-import { runRuleTester } from '../utils/rule-tester';
+import { runRuleTester, runTypescriptRuleTester } from '../utils/rule-tester';
 import { logErrorInTrycatch } from './log-error-in-trycatch';
 
 runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
@@ -930,6 +930,142 @@ runRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
                 });
             `,
             errors: [{ messageId: 'error-not-handled' }, { messageId: 'error-not-handled' }],
+        },
+    ],
+});
+
+runTypescriptRuleTester('log-error-in-trycatch', logErrorInTrycatch, {
+    valid: [
+        {
+            name: 'should detect console.error() call in a catch block with a typed parameter',
+            code: dedent`
+                try {
+                    query()
+                } catch (e: unknown) {
+                    console.error(e)
+                }
+            `,
+        },
+        {
+            name: 'should detect console.error() call inside a namespace',
+            code: dedent`
+                namespace Api {
+                    export function query() {
+                        try {
+                            fn()
+                        } catch (e) {
+                            console.error(e)
+                        }
+                    }
+                }
+            `,
+        },
+        {
+            name: 'should detect console.error() call in an overloaded function implementation',
+            code: dedent`
+                function query(input: string): void;
+                function query(input: number): void;
+                function query(input: unknown): void {
+                    try {
+                        fn()
+                    } catch (e) {
+                        console.error(e)
+                    }
+                }
+            `,
+        },
+        {
+            name: 'should detect console.error() call in a class with an abstract method',
+            code: dedent`
+                abstract class Api {
+                    abstract query(): void;
+
+                    run() {
+                        try {
+                            fn()
+                        } catch (e) {
+                            console.error(e)
+                        }
+                    }
+                }
+            `,
+        },
+        {
+            name: 'should detect a reject function of an executor wrapped in a type assertion',
+            code: dedent`
+                new Promise(((resolve, reject) => {
+                    try {
+                        fn();
+                    } catch (err) {
+                        reject(err);
+                    }
+                }) as PromiseExecutor);
+            `,
+        },
+        {
+            name: 'should detect a reject function of an executor wrapped in satisfies',
+            code: dedent`
+                new Promise(((resolve, reject) => {
+                    try {
+                        fn();
+                    } catch (err) {
+                        reject(err);
+                    }
+                }) satisfies PromiseExecutor);
+            `,
+        },
+        {
+            name: 'should detect a reject function of an executor wrapped in a non-null assertion',
+            code: dedent`
+                new Promise(((resolve, reject) => {
+                    try {
+                        fn();
+                    } catch (err) {
+                        reject(err);
+                    }
+                })!);
+            `,
+        },
+    ],
+    invalid: [
+        {
+            name: 'should yield if a catch block with a typed parameter does not log the error',
+            code: dedent`
+                try {
+                    query()
+                } catch (e: unknown) {
+                    // do nothing
+                }
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield if a catch block inside a namespace does not log the error',
+            code: dedent`
+                namespace Api {
+                    export function query() {
+                        try {
+                            fn()
+                        } catch (e) {
+                            // do nothing
+                        }
+                    }
+                }
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield for a reject function of a wrapped callback that is not the promise executor',
+            code: dedent`
+                new Promise(cb(((resolve, reject) => {
+                    try {
+                        fn();
+                    } catch (err) {
+                        reject(err);
+                    }
+                }) as PromiseExecutor));
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
         },
     ],
 });
