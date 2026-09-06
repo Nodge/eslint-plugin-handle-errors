@@ -1,5 +1,5 @@
 import dedent from 'dedent';
-import { runRuleTester } from '../utils/rule-tester';
+import { runRuleTester, runTypescriptRuleTester } from '../utils/rule-tester';
 import { logErrorInPromises } from './log-error-in-promises';
 
 runRuleTester('log-error-in-promises', logErrorInPromises, {
@@ -478,6 +478,80 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
             code: dedent`
                 new Promise((resolve) => {
                     promise.catch(e => resolve(e));
+                });
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+    ],
+});
+
+runTypescriptRuleTester('log-error-in-promises', logErrorInPromises, {
+    valid: [
+        {
+            name: 'should detect console.error() call in a handler with a typed parameter',
+            code: dedent`
+                promise.catch((e: unknown) => {
+                    console.error(e)
+                });
+            `,
+        },
+        {
+            name: 'should detect console.error() call in a handler of a catch call on a type assertion',
+            code: dedent`
+                (promise as Promise<void>).catch(e => {
+                    console.error(e)
+                });
+            `,
+        },
+        {
+            name: 'should detect console.error() call in a handler of a catch call on a non-null assertion',
+            code: dedent`
+                promise!.catch(e => {
+                    console.error(e)
+                });
+            `,
+        },
+        {
+            name: 'should detect console.error() call in a handler of a catch call on a generic call',
+            code: dedent`
+                getPromise<string>().catch(e => {
+                    console.error(e)
+                });
+            `,
+        },
+        {
+            name: 'should detect console.error() call in a handler of a catch call with a type argument',
+            code: dedent`
+                promise.catch<void>(e => {
+                    console.error(e)
+                });
+            `,
+        },
+    ],
+    invalid: [
+        {
+            name: 'should yield if a handler with a typed parameter does not log the error',
+            code: dedent`
+                promise.catch((e: unknown) => {
+                    // do nothing
+                });
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield if a handler of a catch call on a type assertion does not log the error',
+            code: dedent`
+                (promise as Promise<void>).catch((e: unknown) => {
+                    // do nothing
+                });
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield if a handler of a catch call with a type argument does not log the error',
+            code: dedent`
+                promise.catch<void>(e => {
+                    // do nothing
                 });
             `,
             errors: [{ messageId: 'error-not-handled' }],
