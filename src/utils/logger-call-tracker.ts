@@ -295,12 +295,9 @@ export function createLoggerCallTracker({ settings, context, messageId }: Tracke
     };
 
     /**
-     * Follows the writes that can put the `reject` parameter of a promise executor into a variable,
-     * such as `const renamed = reject`. Which write is live at the call is beyond what the rule tracks,
-     * so every write to the variable counts, wherever in the module it stands: `var renamed = noop;
-     * var renamed = reject` is accepted, a later `renamed = noop` goes unnoticed, and so does a write
-     * made from another function, as in `new Promise((resolve, reject) => { handle = reject })`.
-     * Of the two directions, accepting is the one that keeps quiet on code that does hand the error over.
+     * Follows the writes that can put the `reject` parameter of a promise executor into a variable.
+     * Which write is live at the call is beyond what the rule tracks, so every write counts, wherever
+     * in the module it stands — the direction that keeps quiet on code that does hand the error over.
      */
     const isPromiseReject = (node: Identifier): boolean => {
         // `var x = x` is legal, and so is a longer cycle of aliases: walk iteratively and never twice
