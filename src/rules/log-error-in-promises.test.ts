@@ -258,6 +258,30 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
                 });
             `,
         },
+        {
+            name: 'should work with a promise reject function that has a default value',
+            code: dedent`
+                new Promise((resolve, reject = noop) => {
+                    getPromise().catch(reject);
+                });
+            `,
+        },
+        {
+            name: 'should work with a promise reject function assigned to a variable more than once',
+            code: dedent`
+                new Promise((resolve, reject) => {
+                    var renamed = noop;
+                    var renamed = reject;
+                    getPromise().catch(renamed);
+                });
+
+                new Promise((resolve, reject) => {
+                    let renamed;
+                    renamed = reject;
+                    getPromise().catch(renamed);
+                });
+            `,
+        },
     ],
     invalid: [
         {
@@ -430,6 +454,15 @@ runRuleTester('log-error-in-promises', logErrorInPromises, {
                     }
                     console.error(e)
                 })
+            `,
+            errors: [{ messageId: 'error-not-handled' }],
+        },
+        {
+            name: 'should yield for a reject function of a callback that is not the promise executor',
+            code: dedent`
+                new Promise(cb((resolve, reject) => {
+                    getPromise().catch(reject);
+                }));
             `,
             errors: [{ messageId: 'error-not-handled' }],
         },
