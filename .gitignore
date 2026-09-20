@@ -134,3 +134,7 @@ dist
 
 # macOS
 .DS_Store
+
+# Claude Code: machine-local settings and auto memory
+.claude/settings.local.json
+.claude/memory/
