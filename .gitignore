@@ -138,3 +138,6 @@ dist
 # Claude Code: machine-local settings and auto memory
 .claude/settings.local.json
 .claude/memory/
+
+# Task cycle runs (the profile next to them is committed)
+.agent-runbooks/runs/

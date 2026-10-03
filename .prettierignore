@@ -1,3 +1,5 @@
 dist/
 node_modules/
 pnpm-lock.yaml
+# Vendored from github.com/Nodge/skills, kept byte-identical to upstream
+.claude/skills/
