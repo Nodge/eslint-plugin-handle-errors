@@ -19,7 +19,7 @@ Each release is tagged agent-runbook-authoring/v<__version__>. Changes to the fl
 """
 from __future__ import annotations
 
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 
 import json
 import os
@@ -27,6 +27,7 @@ import re
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from enum import Enum
 from types import SimpleNamespace
 from typing import Any, NoReturn, TypeAlias
@@ -172,9 +173,17 @@ SUPERSEDED_NOTES = ('interrupted', 'relaunched')
 INVALID_REPLY = {'status': Status.FAILED.value, 'reason': 'invalid reply'}
 
 
+def utc_now() -> str:
+    """The current time as state.json records it: UTC, ISO 8601 to the second, `Z` suffix."""
+    return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
 @dataclass
 class Section:
-    """One launch of a step: its id is the step's name, with a counter from the second launch on (fix, fix-2)."""
+    """One launch of a step: its id is the step's name, with a counter from the second launch on (fix, fix-2).
+
+    executor, started_at and ended_at are None in a state.json written before 1.1.0; executor is None for a human step.
+    """
 
     id: str
     name: str
@@ -182,6 +191,9 @@ class Section:
     reply: dict[str, Any] | None = None
     note: str | None = None
     answer: str | None = None
+    executor: str | None = None
+    started_at: str | None = None
+    ended_at: str | None = None
 
     @property
     def superseded(self) -> bool:
@@ -195,14 +207,21 @@ class Section:
     def label(self) -> str:
         return self.id
 
+    def close(self, status: Status) -> None:
+        """Moves the section to status, stamping ended_at if it leaves an open status."""
+        if self.status.is_open and not status.is_open:
+            self.ended_at = utc_now()
+        self.status = status
+
     def to_json(self) -> dict[str, Any]:
         return dict(id=self.id, name=self.name, status=self.status.value, reply=self.reply, note=self.note,
-                    answer=self.answer)
+                    answer=self.answer, executor=self.executor, started_at=self.started_at, ended_at=self.ended_at)
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> Section:
         return cls(id=data['id'], name=data['name'], status=Status(data['status']), reply=data['reply'],
-                   note=data['note'], answer=data.get('answer'))
+                   note=data['note'], answer=data.get('answer'), executor=data.get('executor'),
+                   started_at=data.get('started_at'), ended_at=data.get('ended_at'))
 
 
 @dataclass
@@ -240,10 +259,10 @@ class RunState:
                 return section
         die(f'no section {sid} in state.json')
 
-    def new_section(self, name: str, status: Status) -> Section:
+    def new_section(self, name: str, status: Status, executor: str | None = None) -> Section:
         earlier = sum(1 for s in self.sections if s.name == name)
         sid = f'{name}-{earlier + 1}' if earlier else name
-        section = Section(id=sid, name=name, status=status)
+        section = Section(id=sid, name=name, status=status, executor=executor, started_at=utc_now())
         self.sections.append(section)
         return section
 
@@ -519,7 +538,7 @@ class Renderer:
             if isinstance(step, HumanStep):
                 lines += self._ask(step, section)
             else:
-                lines += self._launch(step, section, plan)
+                lines += self._launch(step, section)
         if plan.waiting:
             lines.append(TEXT['still_running'].format(labels=', '.join(s.label() for s in plan.waiting)))
         if plan.idle:
@@ -551,9 +570,9 @@ class Renderer:
         lines.append(TEXT['ask_then'].format(command=self._answer_command(step, section)))
         return lines
 
-    def _launch(self, step: Step, section: Section, plan: Plan) -> list[str]:
+    def _launch(self, step: Step, section: Section) -> list[str]:
         inputs = self.state.inputs
-        executor = _resolve(step.executor, State(inputs, plan.done_count))
+        executor = section.executor
         headline = TEXT['launch'].format(label=section.label(), executor=executor,
                                          spec=self.rb.executor_specs.get(executor, TEXT['missing_executor']))
         if step.side_effects:
@@ -776,7 +795,8 @@ class Runbook:
             problem = _reply_problem(reply, step.reply)
             if problem:
                 reply = {'status': Status.FAILED.value, 'reason': f'invalid reply: {problem}'}
-        section.reply, section.status = reply, Status(reply['status'])
+        section.reply = reply
+        section.close(Status(reply['status']))
         ProgressLog(run_dir).append(f'{sid}: {json.dumps(reply, ensure_ascii=False)}')
         return state
 
@@ -791,7 +811,8 @@ class Runbook:
         choice = step.match(answer)
         if choice is None:
             die('answer must be one of: ' + ' | '.join(step.choices))
-        section.note, section.answer, section.status = choice, words, Status.DONE
+        section.note, section.answer = choice, words
+        section.close(Status.DONE)
         if step.writes:
             with open(RunFiles(self.steps, run_dir, state).path(section, step.writes), 'w', encoding='utf-8') as f:
                 f.write(words.rstrip('\n') + '\n')
@@ -810,7 +831,8 @@ class Runbook:
     def _supersede(self, run_dir: str, sid: str, note: str) -> RunState:
         state = RunState.load(run_dir)
         section = state.section(sid)
-        section.status, section.note = Status.FAILED, note
+        section.note = note
+        section.close(Status.FAILED)
         ProgressLog(run_dir).append(f'{sid}: {note}')
         return state
 
@@ -837,20 +859,21 @@ class Runbook:
                 ProgressLog(run_dir).append(f'end: {status} ({plan.ending.why})')
             state.status = status
             return renderer.ended(plan.ending)
-        opened = [self._open_section(run_dir, state, name) for name in plan.launch]
+        opened = [self._open_section(run_dir, state, name, plan) for name in plan.launch]
         lines = renderer.pending(plan, opened)
         asking = any(s.status is Status.WAITING_FOR_HUMAN for s in state.sections)
         state.status = Status.WAITING_FOR_HUMAN.value if asking else Status.RUNNING.value
         return lines
 
-    def _open_section(self, run_dir: str, state: RunState, name: str) -> Section:
+    def _open_section(self, run_dir: str, state: RunState, name: str, plan: Plan) -> Section:
         step = self.steps[name]
         log = ProgressLog(run_dir)
         if isinstance(step, HumanStep):
             section = state.new_section(name, Status.WAITING_FOR_HUMAN)
             log.append(f'{section.label()}: asked: {RunFiles(self.steps, run_dir, state).substitute(step.question)}')
         else:
-            section = state.new_section(name, Status.RUNNING)
+            executor = _resolve(step.executor, State(state.inputs, plan.done_count))
+            section = state.new_section(name, Status.RUNNING, executor)
             log.append(f'{section.label()}: launched')
         return section
 

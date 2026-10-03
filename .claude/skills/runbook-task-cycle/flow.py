@@ -5,7 +5,7 @@ from runbook import Runbook, end, parallel
 rb = Runbook()
 
 rb.inputs(brief=str, repo=str, profile=str, checks='', task='', scope='', maxFixRounds=2,
-          top='claude/claude-fable-5-1:high', strong='claude/opus[1m]:high', light='claude/sonnet:low',
+          top='claude/fable:high', strong='claude/opus:high', light='claude/sonnet:low',
           second='codex/gpt-6.1-sol:high')
 
 # Every executor is a thronglet. The agent strings are inputs, so a project's profile can replace them at start; each

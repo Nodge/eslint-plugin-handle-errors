@@ -17,8 +17,8 @@ Four executors, each an agent string as throng names it, `<harness>/<model>[:<ef
 
 | Executor | Steps | Default |
 |---|---|---|
-| `top` | triage | `claude/claude-fable-5-1:high` |
-| `strong` | implement, fix-checks, fix, polish, review A, verify | `claude/opus[1m]:high` |
+| `top` | triage | `claude/fable:high` |
+| `strong` | implement, fix-checks, fix, polish, review A, verify | `claude/opus:high` |
 | `light` | preflight, checks | `claude/sonnet:low` |
 | `second` | review B | `codex/gpt-6.1-sol:high` |
 

@@ -37,9 +37,10 @@ You are the orchestrator of this run. Orchestrating takes a session that can lau
 - launch steps as subagents, with the message `flow.py` prints
 - read a step's output file only to quote it to the human
 - ask the human, and report the end of the run
+- show the human the run's status, as the Status group below says
 - change the brief as the Brief changes section says
 
-Nothing else. No other command, no reading of `flow.py`, `state.json`, `progress.md` or the prompt files, no editing of anything in the run directory beyond `brief.md` as the Brief changes section says. `<skill>` is the directory this `SKILL.md` was loaded from.
+Nothing else. No command beyond these, no reading of `flow.py`, `state.json`, `progress.md` or the prompt files, no editing of anything in the run directory beyond `brief.md` as the Brief changes section says. `<skill>` is the directory this `SKILL.md` was loaded from.
 
 Starting
 
@@ -64,6 +65,10 @@ Waiting
   - You can launch a subagent in the background and get woken up when it finishes, and ending your turn does not end your session: launch the ready steps that way and end your turn. On a wake-up, record the reply, do what `flow.py` prints, end your turn.
   - Otherwise, which includes running nested in another agent where the end of your turn is the end of your run: launch the ready steps in the foreground, in parallel if your harness allows several calls at once, otherwise one after another. Set every timeout or yield parameter your tool accepts to 24 hours or its maximum. If a call returns while the step still runs, call the wait again and do nothing else.
 - Either way the step's completion is the only event. No polling, no sleeping, no reading ahead, no status messages while it runs. An hour-long step is a normal working state.
+
+Status
+
+- If a skill named `runbook-viewer` is available in this session, load it before `start` and do what its "During a run" section says: the status is printed in the same turn as the `flow.py` command that recorded an event, never while waiting for a step. Without the skill, there is no status.
 
 Human steps and side effects
 
