@@ -99,8 +99,8 @@ export default [
 
 This plugin checks that a `catch` block or a `.catch()` handler does something with the error. These rules close the neighbouring ways to lose one:
 
-- [`no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises) (typescript-eslint): a promise has to be awaited, returned, given a rejection handler or explicitly discarded with `void`. This plugin checks only the handlers a promise has, so a promise with none is not reported here. The rule needs [typed linting](https://typescript-eslint.io/getting-started/typed-linting).
-- [`catch-or-return`](https://github.com/eslint-community/eslint-plugin-promise/blob/main/docs/rules/catch-or-return.md) (eslint-plugin-promise): the same idea without type information. A `.then()` chain has to end in `.catch()` or be returned, a bare call such as `fetch(url)` is not checked.
+- [`no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises) (typescript-eslint): a promise has to be awaited, returned, given a rejection handler or discarded with `void`. This plugin checks only the handlers that exist, so a promise with no handler at all needs this rule. It requires [typed linting](https://typescript-eslint.io/getting-started/typed-linting).
+- [`catch-or-return`](https://github.com/eslint-community/eslint-plugin-promise/blob/main/docs/rules/catch-or-return.md) (eslint-plugin-promise): a `.then()` chain has to end in `.catch()` or be returned. The rule needs no type information, but a bare `fetch(url)` with no `.then()` goes unchecked.
 - [`preserve-caught-error`](https://eslint.org/docs/latest/rules/preserve-caught-error) (ESLint core): when you throw a new error, the original has to go in as `cause`.
 - [`only-throw-error`](https://typescript-eslint.io/rules/only-throw-error) (typescript-eslint) or [`no-throw-literal`](https://eslint.org/docs/latest/rules/no-throw-literal) (ESLint core): thrown values have to be `Error` objects, so they carry a stack.
 - [`prefer-promise-reject-errors`](https://eslint.org/docs/latest/rules/prefer-promise-reject-errors) (ESLint core): the same for `reject()`, which this plugin counts as handling.
