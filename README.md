@@ -104,10 +104,10 @@ export default [
 💼 Configurations enabled in.\
 ✅ Set in the `recommended` configuration.
 
-| Name                                                         | Description                                          | 💼  |
-| :----------------------------------------------------------- | :--------------------------------------------------- | :-- |
-| [log-error-in-promises](docs/rules/log-error-in-promises.md) | Enforce error logging in promise `.catch()` handlers | ✅  |
-| [log-error-in-trycatch](docs/rules/log-error-in-trycatch.md) | Enforce error logging in `try`/`catch` blocks        | ✅  |
+| Name                                                         | Description                                              | 💼  |
+| :----------------------------------------------------------- | :------------------------------------------------------- | :-- |
+| [log-error-in-promises](docs/rules/log-error-in-promises.md) | Disallow promise `.catch()` handlers that drop the error | ✅  |
+| [log-error-in-trycatch](docs/rules/log-error-in-trycatch.md) | Disallow `catch` blocks that drop the error              | ✅  |
 
 <!-- end auto-generated rules list -->
 

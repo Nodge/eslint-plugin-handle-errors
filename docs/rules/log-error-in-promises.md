@@ -1,6 +1,6 @@
 # log-error-in-promises
 
-📝 Enforce error logging in promise `.catch()` handlers.
+📝 Disallow promise `.catch()` handlers that drop the error.
 
 💼 This rule is enabled in the ✅ `recommended` config.
 
