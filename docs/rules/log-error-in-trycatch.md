@@ -1,6 +1,6 @@
 # log-error-in-trycatch
 
-📝 Enforce error logging in `try`/`catch` blocks.
+📝 Disallow `catch` blocks that drop the error.
 
 💼 This rule is enabled in the ✅ `recommended` config.
 

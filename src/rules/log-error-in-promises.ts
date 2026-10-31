@@ -17,7 +17,7 @@ export const logErrorInPromises = createRule({
     meta: {
         type: 'problem',
         docs: {
-            description: 'Enforce error logging in promise `.catch()` handlers',
+            description: 'Disallow promise `.catch()` handlers that drop the error',
             recommended: true,
             url: 'https://github.com/Nodge/eslint-plugin-handle-errors/blob/main/docs/rules/log-error-in-promises.md',
         },
