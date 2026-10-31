@@ -42,20 +42,6 @@ is supported.
 
 ## Installation
 
-npm
-
-```bash
-npm install -D eslint-plugin-handle-errors
-```
-
-Yarn
-
-```bash
-yarn add -D eslint-plugin-handle-errors
-```
-
-pnpm
-
 ```bash
 pnpm add -D eslint-plugin-handle-errors
 ```
@@ -81,7 +67,6 @@ export default [
 You can customize the logger functions that are used to log errors in your project.
 
 ```js
-import eslint from '@eslint/js';
 import handleErrors from 'eslint-plugin-handle-errors';
 
 export default [
@@ -92,7 +77,6 @@ export default [
             },
         },
     },
-    eslint.configs.recommended,
     handleErrors.configs.recommended,
 ];
 ```
@@ -115,6 +99,8 @@ export default [
 
 This plugin checks that a `catch` block or a `.catch()` handler does something with the error. These rules close the neighbouring ways to lose one:
 
+- [`no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises) (typescript-eslint): a promise has to be awaited, returned, given a rejection handler or explicitly discarded with `void`. This plugin checks only the handlers a promise has, so a promise with none is not reported here. The rule needs [typed linting](https://typescript-eslint.io/getting-started/typed-linting).
+- [`catch-or-return`](https://github.com/eslint-community/eslint-plugin-promise/blob/main/docs/rules/catch-or-return.md) (eslint-plugin-promise): the same idea without type information. A `.then()` chain has to end in `.catch()` or be returned, a bare call such as `fetch(url)` is not checked.
 - [`preserve-caught-error`](https://eslint.org/docs/latest/rules/preserve-caught-error) (ESLint core): when you throw a new error, the original has to go in as `cause`.
 - [`only-throw-error`](https://typescript-eslint.io/rules/only-throw-error) (typescript-eslint) or [`no-throw-literal`](https://eslint.org/docs/latest/rules/no-throw-literal) (ESLint core): thrown values have to be `Error` objects, so they carry a stack.
 - [`prefer-promise-reject-errors`](https://eslint.org/docs/latest/rules/prefer-promise-reject-errors) (ESLint core): the same for `reject()`, which this plugin counts as handling.
