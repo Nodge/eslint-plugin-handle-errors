@@ -43,7 +43,7 @@ is supported.
 ## Installation
 
 ```bash
-pnpm add -D eslint-plugin-handle-errors
+npm install -D eslint-plugin-handle-errors
 ```
 
 ## Usage
